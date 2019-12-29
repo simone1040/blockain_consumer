@@ -3,10 +3,13 @@ package com.simone.progetto;
 import java.io.Serializable;
 
 public class Transaction implements Serializable{
+
+	private static final long serialVersionUID = 1L;
 	private Integer id_client;
 	private Product product;
 	private Integer quantity;
 	private String timestamp;
+	transient private String hash;
 	
 	public Transaction(Integer id_client, Product product, Integer quantity, String timestamp) {
 		super();
@@ -46,6 +49,14 @@ public class Transaction implements Serializable{
 
 	public void setTimestamp(String timestamp) {
 		this.timestamp = timestamp;
+	}
+	
+	public String getHash() {
+		return hash;
+	}
+
+	public void setHash(String hash) {
+		this.hash = hash;
 	}
 
 	@Override

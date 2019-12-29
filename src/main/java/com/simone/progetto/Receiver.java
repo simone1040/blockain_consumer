@@ -13,7 +13,7 @@ public class Receiver {
 private static final Logger log = LoggerFactory.getLogger(Receiver.class);
 	
 	@RabbitListener(queues = RabbitMQConfiguration.DEFAULT_PARSING_QUEUE)
-	public void consumeDefaultMessage(final Transaction transaction) {
+	public void consumeDefaultMessage(Transaction transaction) {
 		log.info(transaction.getProduct().getName());
 		log.info(transaction.toString());
 	}
