@@ -9,7 +9,6 @@ public class Transaction implements Serializable{
 	private Product product;
 	private Integer quantity;
 	private long timestamp;
-	transient private String hash;
 	
 	public Transaction(Integer id_client, Product product, Integer quantity, long timestamp) {
 		super();
@@ -49,14 +48,6 @@ public class Transaction implements Serializable{
 
 	public void setTimestamp(long timestamp) {
 		this.timestamp = timestamp;
-	}
-	
-	public String getHash() {
-		return hash;
-	}
-
-	public void setHash(String hash) {
-		this.hash = hash;
 	}
 
 	public String getStringToHash(){

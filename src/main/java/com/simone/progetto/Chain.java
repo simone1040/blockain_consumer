@@ -8,21 +8,22 @@ import java.util.ArrayList;
 
 @Component
 public class Chain {
-    private ArrayList<Transaction> chain = new ArrayList<Transaction>();
+    private ArrayList<Block> chain = new ArrayList<Block>();
     private static final Logger log = LoggerFactory.getLogger(Chain.class);
 
     public void insertElement(Transaction transaction){
-        transaction.setHash(this.computeHash(transaction.getStringToHash()));
-        chain.add(transaction);
+        //TODO ASPETTO TEMPO RANDOM PER SIMULAZIONE PROOF OF WORK
+        Block block = new Block(transaction,this.getPreviousHash());
+        log.info("Hashcode del blocco --> " + block.getHash());
+        chain.add(block);
     }
 
-    private String computeHash(String blockHash){
-        String stringToHash = blockHash;
+    private String getPreviousHash(){
+        String previousHash = null;
         if(!chain.isEmpty()){
-            stringToHash = chain.get(chain.size()-1).getHash() + blockHash;
+            previousHash = chain.get(chain.size()-1).getHash();
         }
-        String hash = Utils.applySha256(stringToHash);
-        log.info("Hash dell'item --> " + hash);
-        return hash;
+        return previousHash;
     }
+
 }
