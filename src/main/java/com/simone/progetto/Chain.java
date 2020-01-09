@@ -12,12 +12,17 @@ public class Chain {
     private static final Logger log = LoggerFactory.getLogger(Chain.class);
 
     public void insertElement(Transaction transaction){
-        transaction.setHash(this.computeHash());
+        transaction.setHash(this.computeHash(transaction.getStringToHash()));
         chain.add(transaction);
     }
 
-    private long computeHash(){
-        log.info("Hash dell'item --> " + chain.hashCode());
-        return chain.hashCode();
+    private String computeHash(String blockHash){
+        String stringToHash = blockHash;
+        if(!chain.isEmpty()){
+            stringToHash = chain.get(chain.size()-1).getHash() + blockHash;
+        }
+        String hash = Utils.applySha256(stringToHash);
+        log.info("Hash dell'item --> " + hash);
+        return hash;
     }
 }

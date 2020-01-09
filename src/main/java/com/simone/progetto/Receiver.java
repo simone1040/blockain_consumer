@@ -12,10 +12,8 @@ import rabbitMQ.RabbitMQConfiguration;
 public class Receiver {
 	
 private static final Logger log = LoggerFactory.getLogger(Receiver.class);
-	@Autowired
-	private Chain chain;
-	@Autowired
-	private TransactionRules transactionRules;
+	@Autowired private Chain chain;
+	@Autowired private TransactionRules transactionRules;
 	
 	@RabbitListener(queues = RabbitMQConfiguration.DEFAULT_PARSING_QUEUE)
 	public void consumeDefaultMessage(Transaction transaction) {

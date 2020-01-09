@@ -16,7 +16,6 @@ public class RabbitMQConfiguration {
 	
 	@Bean
 	public TopicExchange tipsExchange() {
-		System.out.println("MyBean instance created");
 		return new TopicExchange(EXCHANGE_NAME);
 	}
 	

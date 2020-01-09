@@ -8,10 +8,10 @@ public class Transaction implements Serializable{
 	private Integer id_client;
 	private Product product;
 	private Integer quantity;
-	private String timestamp;
-	transient private long hash;
+	private long timestamp;
+	transient private String hash;
 	
-	public Transaction(Integer id_client, Product product, Integer quantity, String timestamp) {
+	public Transaction(Integer id_client, Product product, Integer quantity, long timestamp) {
 		super();
 		this.id_client = id_client;
 		this.product = product;
@@ -43,22 +43,26 @@ public class Transaction implements Serializable{
 		this.quantity = quantity;
 	}
 
-	public String getTimestamp() {
+	public long getTimestamp() {
 		return timestamp;
 	}
 
-	public void setTimestamp(String timestamp) {
+	public void setTimestamp(long timestamp) {
 		this.timestamp = timestamp;
 	}
 	
-	public long getHash() {
+	public String getHash() {
 		return hash;
 	}
 
-	public void setHash(long hash) {
+	public void setHash(String hash) {
 		this.hash = hash;
 	}
 
+	public String getStringToHash(){
+		return this.id_client.toString() + this.product.getName()
+				+ this.product.getPrice() + this.quantity.toString();
+	}
 	@Override
 	public String toString() {
 		return "Transaction [id_client=" + id_client + ", product=" + product + ", quantity=" + quantity
