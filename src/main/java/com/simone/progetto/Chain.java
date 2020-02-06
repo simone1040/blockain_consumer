@@ -12,7 +12,6 @@ public class Chain {
     private static final Logger log = LoggerFactory.getLogger(Chain.class);
 
     public void insertElement(Transaction transaction){
-        //TODO ASPETTO TEMPO RANDOM PER SIMULAZIONE PROOF OF WORK
         Block block = new Block(transaction,this.getPreviousHash());
         log.info("Hashcode del blocco --> " + block.getHash());
         chain.add(block);
