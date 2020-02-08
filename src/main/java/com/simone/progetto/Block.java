@@ -6,22 +6,24 @@ import org.slf4j.LoggerFactory;
 import java.util.Random;
 
 public class Block {
+    private Integer id_block; //Contatore che tiene traccia di quanti blocchi tiene la blockchain
     private Transaction data;
     private String hash;
     private Random random = new Random();
     private String previousHash;
     private long timestamp;
     private static final Integer LOW_SECOND = 1000;
-    private static final Integer HIGH_SECOND = 4500;
+    private static final Integer HIGH_SECOND = 8500;
     private static final Logger log = LoggerFactory.getLogger(Block.class);
 
-    public Block(Transaction data, String previousHash) {
+    public Block(Transaction data, String previousHash,Integer id_block) {
+        this.id_block = id_block;
         this.data = data;
         this.previousHash = previousHash;
         this.hash = this.computeHash();
     }
 
-    private String computeHash(){
+    public String computeHash(){
         String stringToHash = data.getStringToHash();
         if(this.previousHash != null){
             stringToHash = this.previousHash + timestamp + data.getStringToHash();
@@ -39,7 +41,6 @@ public class Block {
         catch (InterruptedException ex){
             log.info("Eccezione nello sleep --> " + ex);
         }
-
     }
 
     public Transaction getData() {
@@ -65,5 +66,9 @@ public class Block {
 
     public void setTimestamp(long timestamp) {
         this.timestamp = timestamp;
+    }
+
+    public Integer getId_block() {
+        return id_block;
     }
 }
