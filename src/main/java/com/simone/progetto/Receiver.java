@@ -8,27 +8,27 @@ import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
-import java.util.concurrent.CompletionService;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 
 public class Receiver {
-	
-private static final Logger log = LoggerFactory.getLogger(Receiver.class);
+	private static final Logger log = LoggerFactory.getLogger(Receiver.class);
 	@Autowired private Chain chain;
 	@Autowired private TransactionRules transactionRules;
-
 	@Qualifier("syncronization_queue")
 	@Autowired private SyncroCommunicator communicator;
 	
 	@RabbitListener(queues = "#{TransactionQueue.name}")
 	public void receive(Transaction transaction)  {
-		log.info("transaction arrived, product name --> " + transaction.getProduct().getName() );
-		log.info(transaction.toString());
+		log.info("transaction arrived, product name --> " + transaction.getProduct().getName());
 		if(transactionRules.canInsert(transaction)){
-			chain.insertElement(transaction);
-			//TODO MANDARE IL MESSAGGIO A TUTTI
-			SyncroMessage msg  = new SyncroMessage();
-			communicator.sendMessage(msg);
+			Block b = chain.createBlock(transaction);
+			chain.insertBlock(b);
 			log.info("transaction inserted");
+			//TODO MANDARE IL MESSAGGIO A TUTTI
+			SyncroMessage msg  = new SyncroMessage(b);
+			communicator.sendMessage(msg);
+			log.info("syncro message send to all consumers");
 		}
 		else{
 			log.info("transaction not inserted");
@@ -38,9 +38,12 @@ private static final Logger log = LoggerFactory.getLogger(Receiver.class);
 	@RabbitListener(queues = "#{SyncroQueue.name}")
 	public void receive_syncro(SyncroMessage message)  {
 		if(!message.getId_consumer().equals(Constants.UUID)){
-			System.out.println(message.getMessage());
+			System.out.println("ciao");
 		}
 
 	}
+
+
+
 
 }

@@ -1,20 +1,18 @@
 package com.simone.progetto.syncro;
-
+import com.simone.progetto.Block;
 import com.simone.progetto.Constants;
-import com.simone.progetto.Transaction;
-
 import java.io.Serializable;
 import java.util.Date;
 
 public class SyncroMessage implements Serializable {
     private String id_consumer;
     private long timestamp;
-    private Transaction transaction;
+    private Block block;
 
-    public SyncroMessage(Transaction transaction){
+    public SyncroMessage(Block b){
         this.id_consumer = Constants.UUID;
         this.timestamp = this.createTimestamp();
-        this.transaction = transaction;
+        this.block = b;
     }
 
     private long createTimestamp(){
@@ -29,7 +27,7 @@ public class SyncroMessage implements Serializable {
         return timestamp;
     }
 
-    public Transaction getTransaction() {
-        return transaction;
+    public Block getBlock() {
+        return block;
     }
 }

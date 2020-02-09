@@ -11,10 +11,14 @@ public class Chain {
     private ArrayList<Block> chain = new ArrayList<Block>();
     private static final Logger log = LoggerFactory.getLogger(Chain.class);
 
-    public void insertElement(Transaction transaction){
-        Block block = new Block(transaction,this.getPreviousHash(),this.getLastIdBlock());
-        log.info("Hashcode del blocco --> " + block.getHash());
-        chain.add(block);
+    public Block createBlock(Transaction transaction){
+        Block block = new Block(transaction,this.getPreviousHash(),this.getIdNewBlock());
+        log.info("ID nuovo blocco da inserire--> " + this.getIdNewBlock());
+        return block;
+    }
+
+    public void insertBlock(Block b){
+        chain.add(b);
     }
 
     private String getPreviousHash(){
@@ -25,7 +29,16 @@ public class Chain {
         return previousHash;
     }
 
-    private Integer getLastIdBlock(){
+    private Integer getIdNewBlock(){
+        if(chain.size() == 0){
+            return 0;
+        }
+        else{
+            return chain.get(chain.size() - 1).getId_block() + 1;
+        }
+    }
+
+    public Integer getIdLastBlock(){
         if(chain.size() == 0){
             return 0;
         }
@@ -37,15 +50,9 @@ public class Chain {
     private boolean isChainValid(){
         Block currentBlock;
         Block previousBlock;
-        for(int i = 0; i < chain.size() - 1;i++){
-            if(i == 0){
-                previousBlock = null;
-                currentBlock = chain.get(i);
-            }
-            else{
-                previousBlock = chain.get(i-1);
-                currentBlock = chain.get(i);
-            }
+        for(int i = 1; i < chain.size(); i++){
+            previousBlock = chain.get(i-1);
+            currentBlock = chain.get(i);
             //Effettuiamo la comparazione tra l'hash resgistrato e quello computato sul momento
             if(!currentBlock.getHash().equals(currentBlock.computeHash())){
                 log.info("Hashcode del blocco corrente non corretto");
