@@ -1,11 +1,11 @@
 package com.simone.progetto;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import com.simone.progetto.utils.MyLogger;
+import com.simone.progetto.utils.Utils;
+import java.io.Serializable;
 import java.util.Random;
 
-public class Block {
+public class Block implements Serializable {
     private Integer id_block; //Contatore che tiene traccia di quanti blocchi tiene la blockchain
     private Transaction data;
     private String hash;
@@ -14,7 +14,6 @@ public class Block {
     private long timestamp;
     private static final Integer LOW_SECOND = 1000;
     private static final Integer HIGH_SECOND = 8500;
-    private static final Logger log = LoggerFactory.getLogger(Block.class);
 
     public Block(Transaction data, String previousHash,Integer id_block) {
         this.id_block = id_block;
@@ -36,10 +35,10 @@ public class Block {
         int mseconds = (random.nextInt(HIGH_SECOND-LOW_SECOND) + LOW_SECOND);
         try{
             Thread.sleep(mseconds );
-            log.info("Tempo usato calcolare il proof of work in ms --> " + mseconds);
+            MyLogger.getInstance().info(Block.class.getName() + " - " + Constants.UUID,"Tempo usato calcolare il proof of work in ms --> " + mseconds);
         }
         catch (InterruptedException ex){
-            log.info("Eccezione nello sleep --> " + ex);
+            MyLogger.getInstance().info(Block.class.getName(),"Eccezione nello sleep --> " + ex);
         }
     }
 
@@ -70,5 +69,17 @@ public class Block {
 
     public Integer getId_block() {
         return id_block;
+    }
+
+    @Override
+    public String toString() {
+        return "Block{" +
+                "id_block=" + id_block +
+                ", data=" + data +
+                ", hash='" + hash + '\'' +
+                ", random=" + random +
+                ", previousHash='" + previousHash + '\'' +
+                ", timestamp=" + timestamp +
+                '}';
     }
 }

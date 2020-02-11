@@ -2,14 +2,12 @@ package com.simone.progetto;
 
 import com.simone.progetto.syncro.SyncroCommunicator;
 import com.simone.progetto.syncro.SyncroMessage;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.simone.progetto.utils.MyLogger;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
 public class Receiver {
-	private static final Logger log = LoggerFactory.getLogger(Receiver.class);
 	@Autowired private Chain chain;
 	@Autowired private TransactionRules transactionRules;
 	@Qualifier("syncronization_queue")
@@ -17,23 +15,40 @@ public class Receiver {
 	
 	@RabbitListener(queues = "#{TransactionQueue.name}")
 	public void receive(Transaction transaction)  {
-		log.info("transaction arrived, product name --> " + transaction.getProduct().getName());
+		MyLogger.getInstance().info(Receiver.class.getName() + " - " + Constants.UUID,"Transazione arrivata,nome prodotto --> " + transaction.getProduct().getName());
 		if(transactionRules.canInsert(transaction)){
 			Block b = chain.createBlock(transaction);
-			chain.insertBlock(b);
-			log.info("transaction inserted");
-			communicator.sendMessage(new SyncroMessage(b));
-			log.info("syncro message send to all consumers");
+			if(chain.getChain().size() == 0 || chain.getIdLastBlock() < b.getId_block()){
+				chain.insertBlock(b);
+				MyLogger.getInstance().info(Receiver.class.getName() + " - " + Constants.UUID,"Transazione inserita correttamente");
+				communicator.sendMessage(new SyncroMessage(b));
+				MyLogger.getInstance().info(Receiver.class.getName() + " - " + Constants.UUID,"Messaggio di syncronizzazione inviato a tutti i consumers");
+			}
+			else{
+				MyLogger.getInstance().info(Receiver.class.getName() + " - " + Constants.UUID,"Blocco già risolto da altro consumers");
+			}
 		}
 		else{
-			log.info("transaction not inserted");
+			MyLogger.getInstance().info(Receiver.class.getName() + " - " + Constants.UUID,"transaction not inserted");
 		}
 	}
 
 	@RabbitListener(queues = "#{SyncroQueue.name}")
-	public void receive_syncro(SyncroMessage message)  {
-		if(!message.getId_consumer().equals(Constants.UUID)){
-			System.out.println("ciao");
+	public void receive_syncro(SyncroMessage message){
+		if(!message.getId_consumer().equals(Constants.UUID)){//Messaggio che non arriva da me stesso
+			//Controlliamo che il blocco abbia l'hash giusto.
+			if(message.getBlock().computeHash().equals(message.getBlock().getHash())){//Hash corretto
+				if(chain.getIdLastBlock() < message.getBlock().getId_block()){ // Controllo che non ci sia un blocco uguale
+					chain.insertBlock(message.getBlock());
+					MyLogger.getInstance().info(Receiver.class.getName() + " - " + Constants.UUID,"Blocco già risolto da un altro consumers, aggiungo il suo");
+				}
+				else{
+					MyLogger.getInstance().info(Receiver.class.getName() + " - " + Constants.UUID,"Blocco già da me inserito");
+				}
+			}
+		}
+		for (Block b: chain.getChain()) {
+			MyLogger.getInstance().info(Receiver.class.getName() + " - " + Constants.UUID,"Chain element --> " + b.toString());
 		}
 	}
 

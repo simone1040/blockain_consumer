@@ -14,7 +14,6 @@ public class SyncronizationQueue implements SyncroCommunicator {
 
     @Qualifier("fanout_syncro")
     @Autowired private FanoutExchange fanoutExchange;
-    private static final Logger log = LoggerFactory.getLogger(SyncronizationQueue.class);
 
     @Autowired
     public SyncronizationQueue(final RabbitTemplate template) {

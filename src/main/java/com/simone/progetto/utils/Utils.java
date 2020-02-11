@@ -1,4 +1,4 @@
-package com.simone.progetto;
+package com.simone.progetto.utils;
 
 import java.security.MessageDigest;
 

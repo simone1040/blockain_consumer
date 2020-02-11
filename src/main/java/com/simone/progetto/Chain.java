@@ -1,7 +1,6 @@
 package com.simone.progetto;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.simone.progetto.utils.MyLogger;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -9,12 +8,15 @@ import java.util.ArrayList;
 @Component
 public class Chain {
     private ArrayList<Block> chain = new ArrayList<Block>();
-    private static final Logger log = LoggerFactory.getLogger(Chain.class);
 
     public Block createBlock(Transaction transaction){
         Block block = new Block(transaction,this.getPreviousHash(),this.getIdNewBlock());
-        log.info("ID nuovo blocco da inserire--> " + this.getIdNewBlock());
+        MyLogger.getInstance().info(Chain.class.getName() + " - " + Constants.UUID,"ID nuovo blocco da inserire--> " + this.getIdNewBlock());
         return block;
+    }
+
+    public ArrayList<Block> getChain() {
+        return chain;
     }
 
     public void insertBlock(Block b){
@@ -40,7 +42,7 @@ public class Chain {
 
     public Integer getIdLastBlock(){
         if(chain.size() == 0){
-            return 0;
+            return -1;
         }
         else{
             return chain.get(chain.size() - 1).getId_block();
@@ -55,11 +57,11 @@ public class Chain {
             currentBlock = chain.get(i);
             //Effettuiamo la comparazione tra l'hash resgistrato e quello computato sul momento
             if(!currentBlock.getHash().equals(currentBlock.computeHash())){
-                log.info("Hashcode del blocco corrente non corretto");
+                MyLogger.getInstance().info(Chain.class.getName() + " - " + Constants.UUID,"Hashcode del blocco corrente non corretto");
                 return false;
             }
             if(!previousBlock.getHash().equals(previousBlock.computeHash())){
-                log.info("Hashcode del blocco precedente non corretto ");
+                MyLogger.getInstance().info(Chain.class.getName() + " - " + Constants.UUID,"Hashcode del blocco precedente non corretto ");
                 return false;
             }
         }
