@@ -8,9 +8,6 @@ import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
-
 public class Receiver {
 	private static final Logger log = LoggerFactory.getLogger(Receiver.class);
 	@Autowired private Chain chain;
@@ -25,9 +22,7 @@ public class Receiver {
 			Block b = chain.createBlock(transaction);
 			chain.insertBlock(b);
 			log.info("transaction inserted");
-			//TODO MANDARE IL MESSAGGIO A TUTTI
-			SyncroMessage msg  = new SyncroMessage(b);
-			communicator.sendMessage(msg);
+			communicator.sendMessage(new SyncroMessage(b));
 			log.info("syncro message send to all consumers");
 		}
 		else{
@@ -40,7 +35,6 @@ public class Receiver {
 		if(!message.getId_consumer().equals(Constants.UUID)){
 			System.out.println("ciao");
 		}
-
 	}
 
 
