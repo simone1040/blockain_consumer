@@ -1,7 +1,4 @@
 package com.simone.progetto.syncro;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.FanoutExchange;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,9 +17,8 @@ public class SyncronizationQueue implements SyncroCommunicator {
         this.rabbitTemplate = template;
     }
 
-    public boolean sendMessage(SyncroMessage message) {
+    public void sendMessage(SyncroMessage message) {
         rabbitTemplate.convertAndSend(fanoutExchange.getName(),
                 "",message);
-        return true;
     }
 }
