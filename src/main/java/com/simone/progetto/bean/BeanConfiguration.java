@@ -1,6 +1,7 @@
 package com.simone.progetto.bean;
 
 import com.simone.progetto.Receiver;
+import com.simone.progetto.syncroRequestCode;
 import com.simone.progetto.SyncroQueue;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,6 +18,11 @@ public class BeanConfiguration {
     @Bean
     public SyncroQueue syncroQueue() {
         return new SyncroQueue();
+    }
+
+    @Bean
+    public syncroRequestCode syncroRequestCode() {
+        return new syncroRequestCode();
     }
 
     @Bean
