@@ -3,6 +3,7 @@ package com.simone.progetto;
 import com.simone.progetto.utils.MyLogger;
 import com.simone.progetto.utils.Utils;
 import java.io.Serializable;
+import java.util.Date;
 import java.util.Random;
 
 public class Block implements Serializable {
@@ -19,22 +20,25 @@ public class Block implements Serializable {
         this.id_block = id_block;
         this.data = data;
         this.previousHash = previousHash;
-        this.hash = this.computeHash();
+        this.hash = this.computeHash(true);
     }
 
-    public String computeHash(){
+    public String computeHash(boolean compute_proof){
         String stringToHash = data.getStringToHash();
+        if(compute_proof){
+            this.computeProofOfWoork();
+        }
         if(this.previousHash != null){
             stringToHash = this.previousHash + timestamp + data.getStringToHash();
         }
-        this.computeProofOfWoork();
         return Utils.applySha256(stringToHash);
     }
 
     private void computeProofOfWoork(){
         int mseconds = (random.nextInt(HIGH_SECOND-LOW_SECOND) + LOW_SECOND);
         try{
-            Thread.sleep(mseconds );
+            Thread.sleep(mseconds);
+            this.timestamp = new Date().getTime();
             MyLogger.getInstance().info(Block.class.getName() + " - " + Constants.UUID,"Tempo usato calcolare il proof of work in ms --> " + mseconds);
         }
         catch (InterruptedException ex){
