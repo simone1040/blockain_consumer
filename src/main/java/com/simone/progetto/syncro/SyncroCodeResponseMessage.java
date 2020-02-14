@@ -3,9 +3,10 @@ package com.simone.progetto.syncro;
 import com.simone.progetto.Block;
 import com.simone.progetto.Constants;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 
-public class SyncroCodeResponseMessage {
+public class SyncroCodeResponseMessage implements Serializable {
     private String id_consumer;
     private Constants.Status_request_block type_request;
     private ArrayList<Block> block_of_transaction;

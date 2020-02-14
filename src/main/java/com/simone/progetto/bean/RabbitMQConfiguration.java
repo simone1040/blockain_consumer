@@ -11,8 +11,6 @@ public class RabbitMQConfiguration {
 	Coda che permette la sincronizzazione dei nuovi consumer, e dei vecchi
 	 */
 	public static final String FANOUT_EXCHANGE_SYNCRO_REQUEST_CODE = "FanoutExchangeSyncroRequestCode";
-	public static final String FANOUT_EXCHANGE_SYNCRO_RESPONSE_CODE = "FanoutExchangeSyncroResponseCode";
-
 
 	@Bean(name = "fanout_transaction")
 	public FanoutExchange fanout_transaction() {
@@ -29,12 +27,6 @@ public class RabbitMQConfiguration {
 		return new FanoutExchange(FANOUT_EXCHANGE_SYNCRO_REQUEST_CODE);
 	}
 
-	@Bean(name = "fanout_syncro_response_code")
-	public FanoutExchange fanout_syncro_response_code() {
-		return new FanoutExchange(FANOUT_EXCHANGE_SYNCRO_RESPONSE_CODE);
-	}
-
-
 	@Bean
 	public Queue TransactionQueue() {
 		return new AnonymousQueue();
@@ -47,11 +39,6 @@ public class RabbitMQConfiguration {
 
 	@Bean
 	public Queue SyncroRequestCode() {
-		return new AnonymousQueue();
-	}
-
-	@Bean
-	public Queue SyncroResponseCode() {
 		return new AnonymousQueue();
 	}
 
@@ -70,8 +57,4 @@ public class RabbitMQConfiguration {
 		return BindingBuilder.bind(SyncroRequestCode).to(fanout_syncro_request_code);
 	}
 
-	@Bean
-	public Binding binding_syncro_response_code(FanoutExchange fanout_syncro_response_code, Queue SyncroResponseCode) {
-		return BindingBuilder.bind(SyncroResponseCode).to(fanout_syncro_response_code);
-	}
 }
