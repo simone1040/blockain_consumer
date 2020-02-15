@@ -7,13 +7,19 @@ import java.io.Serializable;
 import java.util.ArrayList;
 
 public class SyncroCodeResponseMessage implements Serializable {
+    private String id_publisher;
     private String id_consumer;
     private Constants.Status_request_block type_request;
     private ArrayList<Block> block_of_transaction;
 
-    public SyncroCodeResponseMessage(String id_consumer, Constants.Status_request_block type_request) {
+    public SyncroCodeResponseMessage(String id_publisher,String id_consumer, Constants.Status_request_block type_request) {
+        this.id_publisher = id_publisher;
         this.id_consumer = id_consumer;
         this.type_request = type_request;
+    }
+
+    public String getId_publisher() {
+        return id_publisher;
     }
 
     public String getId_consumer() {
@@ -37,6 +43,6 @@ public class SyncroCodeResponseMessage implements Serializable {
     }
 
     public void setBlock_of_transaction(ArrayList<Block> block_of_transaction) {
-        this.block_of_transaction = block_of_transaction;
+        this.block_of_transaction = new ArrayList<Block>(block_of_transaction);
     }
 }

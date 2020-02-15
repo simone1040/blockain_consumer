@@ -2,6 +2,7 @@ package com.simone.progetto.utils;
 
 import java.security.MessageDigest;
 
+
 public class Utils {
     public static String applySha256(String input){
         try {

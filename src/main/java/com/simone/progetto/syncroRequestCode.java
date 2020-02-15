@@ -3,6 +3,7 @@ package com.simone.progetto;
 import com.simone.progetto.syncro.SyncroCodeRequestMessage;
 import com.simone.progetto.syncro.SyncroCodeResponseMessage;
 import com.simone.progetto.syncro.SyncronizationCodeResponseQueue;
+import com.simone.progetto.utils.MyLogger;
 import org.springframework.amqp.rabbit.annotation.RabbitHandler;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,9 +18,9 @@ public class syncroRequestCode {
 
     @RabbitHandler
     public void receive(SyncroCodeRequestMessage syncroCodeRequestMessage){
-        if(syncroCodeRequestMessage.getId_applicant().equals(Constants.UUID)){
-            SyncroCodeResponseMessage msg = new SyncroCodeResponseMessage(syncroCodeRequestMessage.getId_applicant(),
-                    syncroCodeRequestMessage.getRequest());
+        if(!syncroCodeRequestMessage.getId_applicant().equals(Constants.UUID)){
+            SyncroCodeResponseMessage msg = new SyncroCodeResponseMessage(Constants.UUID,
+                    syncroCodeRequestMessage.getId_applicant(),syncroCodeRequestMessage.getRequest());
             switch (syncroCodeRequestMessage.getRequest()){
                 case ALL:
                     msg.setBlock_of_transaction(chain.getChain());
@@ -35,18 +36,35 @@ public class syncroRequestCode {
                     break;
             }
             //DEVO INVIARLO NELLA CODA
-            System.out.println("Mando risposta");
             communicator.sendResponse(msg);
         }
     }
 
     @RabbitHandler
     public void receive(SyncroCodeResponseMessage syncroCodeResponseMessage){
-        if(!syncroCodeResponseMessage.getId_consumer().equals(Constants.UUID)){
-            System.out.println(syncroCodeResponseMessage.getId_consumer());
-        }
-        else{
-            System.out.println("Risposta da me stesso");
+        if(!syncroCodeResponseMessage.getId_publisher().equals(Constants.UUID) &&
+        syncroCodeResponseMessage.getId_consumer().equals(Constants.UUID)){
+            if(chain.isToUpdate()){//Controllo che già non sia stata effettuata la syncronizzazione
+                switch (syncroCodeResponseMessage.getType_request()){
+                    case ALL:
+                        //Controllo che la chain sia valida
+                        if(chain.setChain(syncroCodeResponseMessage.getBlock_of_transaction())){
+                            MyLogger.getInstance().info(syncroRequestCode.class.getName(),
+                                    "Syncronizzazione del consumers con la blockchain effettuata correttamente");
+                        }
+                        else{
+                            MyLogger.getInstance().info(syncroRequestCode.class.getName(),
+                                    "Syncronizzazione del consumers con la blockchain non effettuata correttamente,uscita");
+                            System.exit(1);
+                        }
+                        break;
+                    case ANY:
+                        for (Block b: syncroCodeResponseMessage.getBlock_of_transaction()) {
+                            chain.setBlockFromOtherConsumer(b);
+                        }
+                        break;
+                }
+            }
         }
     }
 }

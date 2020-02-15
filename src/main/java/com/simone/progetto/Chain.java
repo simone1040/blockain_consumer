@@ -7,6 +7,7 @@ import java.util.ArrayList;
 
 @Component
 public class Chain {
+    private boolean toUpdate = true; //booleano che permette di syncronizzare la chain una sola volta
     private ArrayList<Block> chain = new ArrayList<Block>();
 
     public Block createBlock(Transaction transaction){
@@ -47,7 +48,15 @@ public class Chain {
         }
     }
 
-    private boolean isChainValid(){
+    public boolean isToUpdate() {
+        return toUpdate;
+    }
+
+    public void setToUpdate(boolean toUpdate) {
+        this.toUpdate = toUpdate;
+    }
+
+    private boolean isChainValid(ArrayList<Block> chain){
         MyLogger.getInstance().info(Chain.class.getName(),"---------------- Stato chain -----------------");
         for (Block b: chain) {
             MyLogger.getInstance().info(Receiver.class.getName() + " - " + Constants.UUID,"Chain element --> " + b.toString());
@@ -69,6 +78,43 @@ public class Chain {
             }
         }
         return true;
+    }
+
+    public boolean setChain(ArrayList<Block> chain) {
+        if (this.isChainValid(chain)){
+            this.chain = new ArrayList<Block>(chain);
+            toUpdate = false;
+            return true;
+        }
+        return false;
+    }
+
+    public boolean setBlockFromOtherConsumer(Block currentBlock){
+        Block previousBlock = null;
+        if(currentBlock.getId_block() > this.getIdLastBlock() + 1) { //Mancano alcuni blocchi nel mezzo e quindi ci sarà qualche errore
+            return false;
+        }
+        else{
+            try {
+                 previousBlock = chain.get(currentBlock.getId_block() - 1);
+            } catch ( IndexOutOfBoundsException e ) {
+                MyLogger.getInstance().error(Chain.class.getName(),"Exception blocco non presente -->",e);
+                return false;
+            }
+            if(previousBlock != null){
+                if(!currentBlock.getHash().equals(currentBlock.computeHash(false))){
+                    MyLogger.getInstance().info(Chain.class.getName() + " - " + Constants.UUID,"Hashcode del blocco corrente non corretto");
+                    return false;
+                }
+                if(!previousBlock.getHash().equals(previousBlock.computeHash(false))){
+                    MyLogger.getInstance().info(Chain.class.getName() + " - " + Constants.UUID,"Hashcode del blocco precedente non corretto ");
+                    return false;
+                }
+                chain.set(currentBlock.getId_block(),currentBlock);
+                return true;
+            }
+            return false;
+        }
     }
 
 }

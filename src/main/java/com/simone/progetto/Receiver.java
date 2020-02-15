@@ -18,7 +18,6 @@ public class Receiver {
 
 	@RabbitListener(queues = "#{TransactionQueue.name}")
 	public void receive(Transaction transaction){
-		//TODO CONTROLLO DELL'INTEGRITÀ CODA
 		MyLogger.getInstance().info(Receiver.class.getName() + " - " + Constants.UUID,"Transazione arrivata,nome prodotto --> " + transaction.getProduct().getName());
 		if(transactionRules.canInsert(transaction)){
 			Block b = chain.createBlock(transaction);
