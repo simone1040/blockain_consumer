@@ -50,25 +50,16 @@ public class Block implements Serializable {
         return data;
     }
 
-    public void setData(Transaction data) {
-        this.data = data;
-    }
-
     public String getHash() {
         return hash;
     }
-
-
+    
     public String getPreviousHash() {
         return previousHash;
     }
 
     public long getTimestamp() {
         return timestamp;
-    }
-
-    public void setTimestamp(long timestamp) {
-        this.timestamp = timestamp;
     }
 
     public Integer getId_block() {

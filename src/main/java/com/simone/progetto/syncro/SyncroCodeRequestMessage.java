@@ -21,16 +21,8 @@ public class SyncroCodeRequestMessage implements Serializable {
         return id_applicant;
     }
 
-    public void setId_applicant(String id_applicant) {
-        this.id_applicant = id_applicant;
-    }
-
     public Constants.Status_request_block getRequest() {
         return request;
-    }
-
-    public void setRequest(Constants.Status_request_block request) {
-        this.request = request;
     }
 
     public ArrayList<Integer> getRequest_block() {

@@ -29,11 +29,9 @@ public class SyncronizationQueue implements SyncroCommunicator {
                 "",message);
     }
 
-
     @EventListener(ApplicationReadyEvent.class)
-    public void doSomethingAfterStartup() {
-        SyncroCodeRequestMessage msg = new SyncroCodeRequestMessage(Constants.UUID, Constants.Status_request_block.ALL);
+    public void SyncronizationStartup() {
         MyLogger.getInstance().info(SyncronizationQueue.class.getName() + " - " + Constants.UUID,"Richiesta syncronizzazione della coda");
-        communicator.sendRequest(msg);
+        communicator.sendRequest(new SyncroCodeRequestMessage(Constants.UUID, Constants.Status_request_block.ALL));
     }
 }

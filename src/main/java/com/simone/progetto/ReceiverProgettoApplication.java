@@ -10,6 +10,4 @@ public class ReceiverProgettoApplication {
 		MyLogger.getInstance().info(ReceiverProgettoApplication.class.getName() + " - " + Constants.UUID,"Program started !");
 		SpringApplication.run(ReceiverProgettoApplication.class, args);
 	}
-
-
 }

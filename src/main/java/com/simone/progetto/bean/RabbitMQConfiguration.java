@@ -8,7 +8,7 @@ public class RabbitMQConfiguration {
 	public static final String FANOUT_EXCHANGE_TRANSACTION = "FanoutExchange";
 	public static final String FANOUT_EXCHANGE_SYNCRO = "FanoutExchangeSyncro";
 	/*
-	Coda che permette la sincronizzazione dei nuovi consumer, e dei vecchi
+	Coda che permette la sincronizzazione delle code con i nuovi consumers
 	 */
 	public static final String FANOUT_EXCHANGE_SYNCRO_REQUEST_CODE = "FanoutExchangeSyncroRequestCode";
 

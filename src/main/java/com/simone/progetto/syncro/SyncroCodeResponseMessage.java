@@ -26,10 +26,6 @@ public class SyncroCodeResponseMessage implements Serializable {
         return id_consumer;
     }
 
-    public void setId_consumer(String id_consumer) {
-        this.id_consumer = id_consumer;
-    }
-
     public Constants.Status_request_block getType_request() {
         return type_request;
     }
