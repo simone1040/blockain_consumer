@@ -9,11 +9,13 @@ import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.ArrayList;
+import java.util.concurrent.Semaphore;
 
 @RabbitListener(id="multi",queues = "#{SyncroRequestCode.name}")
 public class syncroRequestCode {
     @Autowired
     private Chain chain;
+    @Autowired private Semaphore lock_chain;
     @Autowired private SyncronizationCodeResponseQueue communicator;
 
     @RabbitHandler
@@ -29,7 +31,10 @@ public class syncroRequestCode {
                     ArrayList<Block> blocks = new ArrayList<Block>();
                     for (Integer i: syncroCodeRequestMessage.getRequest_block()) {
                         if(i < chain.getIdLastBlock()){
-                            blocks.add(chain.getChain().get(i));
+                            Block b = chain.getElementChain(i);
+                            if(b != null){
+                                blocks.add(b);
+                            }
                         }
                     }
                     msg.setBlock_of_transaction(blocks);
@@ -42,29 +47,40 @@ public class syncroRequestCode {
 
     @RabbitHandler
     public void receive(SyncroCodeResponseMessage syncroCodeResponseMessage){
+        boolean toExit = false;
         if(!syncroCodeResponseMessage.getId_publisher().equals(Constants.UUID) &&
         syncroCodeResponseMessage.getId_consumer().equals(Constants.UUID)){
-            if(chain.isToUpdate()){//Controllo che già non sia stata effettuata la syncronizzazione
-                switch (syncroCodeResponseMessage.getType_request()){
-                    case ALL:
-                        //Controllo che la chain sia valida
-                        if(chain.setChain(syncroCodeResponseMessage.getBlock_of_transaction())){
-                            MyLogger.getInstance().info(syncroRequestCode.class.getName(),
-                                    "Syncronizzazione del consumers con la blockchain effettuata correttamente");
-                        }
-                        else{
-                            MyLogger.getInstance().info(syncroRequestCode.class.getName(),
-                                    "Syncronizzazione del consumers con la blockchain non effettuata correttamente,uscita");
-                            System.exit(1);
-                        }
-                        break;
-                    case ANY:
-                        for (Block b: syncroCodeResponseMessage.getBlock_of_transaction()) {
-                            chain.setBlockFromOtherConsumer(b);
-                        }
-                        break;
+            try{
+                lock_chain.acquire();
+                if(chain.isToUpdate()){//Controllo che già non sia stata effettuata la syncronizzazione
+                    switch (syncroCodeResponseMessage.getType_request()){
+                        case ALL:
+                            //Controllo che la chain sia valida
+                            if(chain.setChain(syncroCodeResponseMessage.getBlock_of_transaction())){
+                                MyLogger.getInstance().info(syncroRequestCode.class.getName() + " - " + Constants.UUID,
+                                        "Syncronizzazione del consumers con la blockchain effettuata correttamente");
+                            }
+                            else{
+                                MyLogger.getInstance().info(syncroRequestCode.class.getName() + " - " + Constants.UUID,
+                                        "Syncronizzazione del consumers con la blockchain non effettuata correttamente,uscita");
+                                toExit = true;
+                            }
+                            break;
+                        case ANY:
+                            for (Block b: syncroCodeResponseMessage.getBlock_of_transaction()) {
+                                chain.setBlockFromOtherConsumer(b);
+                            }
+                            break;
+                    }
                 }
             }
+            catch (Exception ex){
+                MyLogger.getInstance().error(syncroRequestCode.class.getName() + " - " + Constants.UUID,"Eccezione nell'acquire --> "+ex.toString(),ex);
+            }
+            lock_chain.release();
+        }
+        if (toExit){
+            System.exit(1);
         }
     }
 }

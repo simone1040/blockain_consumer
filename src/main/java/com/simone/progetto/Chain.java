@@ -57,22 +57,28 @@ public class Chain {
     }
 
     private boolean isChainValid(ArrayList<Block> chain){
+        boolean toRet = true;
         Integer count = 0;
         Block currentBlock;
         Block previousBlock;
-        MyLogger.getInstance().info(Chain.class.getName(),"---------------- Stato chain -----------------");
+        MyLogger.getInstance().info(Chain.class.getName() + " - " + Constants.UUID,"---------------- Stato chain -----------------");
         for (Block b: chain) {
             MyLogger.getInstance().info(Receiver.class.getName() + " - " + Constants.UUID,"Chain element " + count + " --> " + b.toString());
             count++;
         }
-        MyLogger.getInstance().info(Chain.class.getName(),"----------------------------------------------");
+        MyLogger.getInstance().info(Chain.class.getName() + " - " + Constants.UUID,"----------------------------------------------");
         for(int i = 1; i < chain.size(); i++){
-            previousBlock = chain.get(i-1);
-            currentBlock = chain.get(i);
-            //Effettuiamo la comparazione tra l'hash registrato e quello computato sul momento
-            if (!checkHashTwoBlock(currentBlock, previousBlock)) return false;
+            previousBlock = getElementChain(i-1);
+            currentBlock = getElementChain(i);
+            if(previousBlock != null && currentBlock != null){
+                //Effettuiamo la comparazione tra l'hash registrato e quello computato sul momento
+                if (!checkHashTwoBlock(currentBlock, previousBlock)) toRet = false;
+            }
+            else{
+                toRet = false;
+            }
         }
-        return true;
+        return toRet;
     }
 
     public boolean setChain(ArrayList<Block> chain) {
@@ -84,19 +90,24 @@ public class Chain {
         return false;
     }
 
+    public Block getElementChain(Integer index){
+        Block b = null;
+        try {
+            b = chain.get(index);
+        }
+        catch (ArrayIndexOutOfBoundsException ex){
+            MyLogger.getInstance().error(Chain.class.getName() + " - " + Constants.UUID,"Elemento in Chain non esistente --> "+ex.toString(),ex);
+        }
+        return b;
+    }
+
     public boolean setBlockFromOtherConsumer(Block currentBlock){
         Block previousBlock;
         if(currentBlock.getId_block() > this.getIdLastBlock() + 1) { //Mancano alcuni blocchi nel mezzo e quindi ci sarà qualche errore
             return false;
         }
         else{
-            try {
-                previousBlock = chain.get(currentBlock.getId_block());
-            }
-            catch ( IndexOutOfBoundsException e ) {
-                MyLogger.getInstance().error(Chain.class.getName(),"Exception blocco non presente -->",e);
-                return false;
-            }
+            previousBlock = getElementChain(currentBlock.getId_block());
             if(previousBlock != null){
                 if (checkHashTwoBlock(currentBlock, previousBlock)){
                     chain.set(currentBlock.getId_block(),currentBlock);
@@ -118,6 +129,8 @@ public class Chain {
         }
         return true;
     }
+
+
 
 
 }

@@ -42,7 +42,7 @@ public class Block implements Serializable {
             MyLogger.getInstance().info(Block.class.getName() + " - " + Constants.UUID,"Tempo usato calcolare il proof of work in ms --> " + mseconds);
         }
         catch (InterruptedException ex){
-            MyLogger.getInstance().info(Block.class.getName(),"Eccezione nello sleep --> " + ex);
+            MyLogger.getInstance().info(Block.class.getName() + " - " + Constants.UUID,"Eccezione nello sleep --> " + ex);
         }
     }
 
