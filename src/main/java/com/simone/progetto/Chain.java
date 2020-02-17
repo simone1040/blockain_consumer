@@ -67,7 +67,7 @@ public class Chain {
             count++;
         }
         MyLogger.getInstance().info(Chain.class.getName() + " - " + Constants.UUID,"----------------------------------------------");
-        for(int i = 1; i < chain.size(); i++){
+        for(int i = 1; i < chain.size() - 1; i++){
             previousBlock = getElementChain(i-1);
             currentBlock = getElementChain(i);
             if(previousBlock != null && currentBlock != null){

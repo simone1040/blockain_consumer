@@ -32,4 +32,8 @@ public class SyncroCodeRequestMessage implements Serializable {
     public void setRequest_block(ArrayList<Integer> request_block) {
         this.request_block = request_block;
     }
+
+    public void addRequestBlock(Integer indexBlock){
+        request_block.add(indexBlock);
+    }
 }

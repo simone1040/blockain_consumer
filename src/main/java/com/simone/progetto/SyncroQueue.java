@@ -1,6 +1,8 @@
 package com.simone.progetto;
 
+import com.simone.progetto.syncro.SyncroCodeRequestMessage;
 import com.simone.progetto.syncro.SyncroMessage;
+import com.simone.progetto.syncro.SyncronizationCodeResponseQueue;
 import com.simone.progetto.utils.MyLogger;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,6 +12,7 @@ import java.util.concurrent.Semaphore;
 public class SyncroQueue {
     @Autowired private Chain chain;
     @Autowired private Semaphore lock_chain;
+    @Autowired private SyncronizationCodeResponseQueue communicator;
 
 
     @RabbitListener(queues = "#{SyncroQueue.name}")
@@ -20,8 +23,18 @@ public class SyncroQueue {
                 try {
                     lock_chain.acquire();
                     if(chain.getIdLastBlock() < message.getBlock().getId_block()){ // Controllo che non ci sia un blocco uguale
-                        chain.insertBlock(message.getBlock());
-                        MyLogger.getInstance().info(Receiver.class.getName() + " - " + Constants.UUID,"Blocco già risolto da un altro consumers, aggiungo il suo");
+                        //Controllo che sia il blocco consecutivo in ordine numerico,altrimenti lo richiedo
+                        if(chain.getIdLastBlock() + 1 == message.getBlock().getId_block()){
+                            chain.insertBlock(message.getBlock());
+                            MyLogger.getInstance().info(Receiver.class.getName() + " - " + Constants.UUID,"Blocco già risolto da un altro consumers, aggiungo il suo");
+                        }
+                        else{//Richiedo blocchi mancanti da inserire
+                            SyncroCodeRequestMessage msg = new SyncroCodeRequestMessage(Constants.UUID, Constants.Status_request_block.ANY);
+                            for(Integer index = chain.getIdLastBlock() + 1; index < message.getBlock().getId_block();index++){
+                                msg.addRequestBlock(index);
+                            }
+                            communicator.sendRequest(msg);
+                        }
                     }
                     else{
                         MyLogger.getInstance().info(Receiver.class.getName() + " - " + Constants.UUID,"Blocco non risolto da altro consumers,inserisco il mio");

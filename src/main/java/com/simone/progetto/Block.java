@@ -70,10 +70,10 @@ public class Block implements Serializable {
     public String toString() {
         return "Block{" +
                 "id_block=" + id_block +
-                ", data=" + data +
-                ", hash='" + hash + '\'' +
-                ", random=" + random +
-                ", previousHash='" + previousHash + '\'' +
+                ", Client Product=" + data.getId_client() +
+                ", Product name=" + data.getProduct().getName() +
+                ", Product price=" + data.getProduct().getPrice() +
+                ", Product quantity=" + data.getQuantity() +
                 ", timestamp=" + timestamp +
                 '}';
     }
