@@ -26,10 +26,10 @@ public class Block implements Serializable {
     }
 
     public String computeHash(boolean compute_proof){
-        String stringToHash = data.getStringToHash();
         if(compute_proof){
             this.computeProofOfWoork();
         }
+        String stringToHash = timestamp + data.getStringToHash();
         if(this.previousHash != null){
             stringToHash = this.previousHash  + timestamp + data.getStringToHash();
         }
