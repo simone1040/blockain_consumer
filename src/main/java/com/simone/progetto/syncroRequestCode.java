@@ -31,7 +31,7 @@ public class syncroRequestCode {
                     ArrayList<Block> blocks = new ArrayList<Block>();
                     for (Integer i: syncroCodeRequestMessage.getRequest_block()) {
                         if(i < chain.getIdLastBlock()){
-                            Block b = chain.getElementChain(i);
+                            Block b = chain.getElementChain(chain.getChain(),i);
                             if(b != null){
                                 blocks.add(b);
                             }

@@ -58,7 +58,7 @@ public class Chain {
 
     private boolean isChainValid(ArrayList<Block> chain){
         boolean toRet = true;
-        Integer count = 0;
+        int count = 0;
         Block currentBlock;
         Block previousBlock;
         MyLogger.getInstance().info(Chain.class.getName() + " - " + Constants.UUID,"---------------- Stato chain -----------------");
@@ -67,9 +67,9 @@ public class Chain {
             count++;
         }
         MyLogger.getInstance().info(Chain.class.getName() + " - " + Constants.UUID,"----------------------------------------------");
-        for(int i = 1; i < chain.size() - 1; i++){
-            previousBlock = getElementChain(i-1);
-            currentBlock = getElementChain(i);
+        for(int i = 1; i < chain.size(); i++){
+            previousBlock = getElementChain(chain,i-1);
+            currentBlock = getElementChain(chain,i);
             if(previousBlock != null && currentBlock != null){
                 //Effettuiamo la comparazione tra l'hash registrato e quello computato sul momento
                 if (!checkHashTwoBlock(currentBlock, previousBlock)) toRet = false;
@@ -90,10 +90,10 @@ public class Chain {
         return false;
     }
 
-    public Block getElementChain(Integer index){
+    public Block getElementChain(ArrayList<Block> blocksChain,Integer index){
         Block b = null;
         try {
-            b = chain.get(index);
+            b = blocksChain.get(index);
         }
         catch (ArrayIndexOutOfBoundsException ex){
             MyLogger.getInstance().error(Chain.class.getName() + " - " + Constants.UUID,"Elemento in Chain non esistente --> "+ex.toString(),ex);
@@ -107,7 +107,7 @@ public class Chain {
             return false;
         }
         else{
-            previousBlock = getElementChain(currentBlock.getId_block());
+            previousBlock = getElementChain(chain,currentBlock.getId_block());
             if(previousBlock != null){
                 if (checkHashTwoBlock(currentBlock, previousBlock)){
                     chain.set(currentBlock.getId_block(),currentBlock);

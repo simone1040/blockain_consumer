@@ -26,7 +26,7 @@ public class SyncroQueue {
                         //Controllo che sia il blocco consecutivo in ordine numerico,altrimenti lo richiedo
                         if(chain.getIdLastBlock() + 1 == message.getBlock().getId_block()){
                             chain.insertBlock(message.getBlock());
-                            MyLogger.getInstance().info(Receiver.class.getName() + " - " + Constants.UUID,"Blocco già risolto da un altro consumers, aggiungo il suo");
+                            MyLogger.getInstance().info(Receiver.class.getName() + " - " + Constants.UUID,"Blocco già risolto da un altro consumers --> " + message.getBlock().getId_consumer() +", aggiungo il suo");
                         }
                         else{//Richiedo blocchi mancanti da inserire
                             SyncroCodeRequestMessage msg = new SyncroCodeRequestMessage(Constants.UUID, Constants.Status_request_block.ANY);
@@ -39,7 +39,7 @@ public class SyncroQueue {
                     else{
                         MyLogger.getInstance().info(Receiver.class.getName() + " - " + Constants.UUID,"Blocco non risolto da altro consumers,inserisco il mio");
                         for(int i = chain.getChain().size() - 1 ; i >= 0 ;i--){
-                            Block block = chain.getElementChain(i);
+                            Block block = chain.getElementChain(chain.getChain(),i);
                             if(block != null){
                                 if(block.getId_block().equals(message.getBlock().getId_block())){
                                     if(block.getTimestamp() > message.getBlock().getTimestamp()){
