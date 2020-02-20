@@ -1,9 +1,10 @@
 package com.simone.progetto;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
 
-public class Node {
+public class Node implements Serializable {
     private List<Node> children = new ArrayList<Node>();
     private Node parent = null;
     private Integer height = 1;
@@ -59,7 +60,7 @@ public class Node {
         this.height = height;
     }
 
-    
+
     /*ritorno il figlio */
     public Node addChild(Node child) {
         child.setParent(this);
@@ -71,7 +72,7 @@ public class Node {
     @Override
     public String toString() {
         return "Node{" +
-                ", height=" + height +
+                "height=" + height +
                 ", data=" + data.toString() +
                 '}';
     }

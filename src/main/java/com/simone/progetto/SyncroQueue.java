@@ -27,11 +27,10 @@ public class SyncroQueue {
                     }
                     else{//Non Ho inserito correttamente, potrebbe mancarmi qualcosa
                         SyncroCodeRequestMessage msg = new SyncroCodeRequestMessage(Constants.UUID, Constants.Status_request_block.ANY);
-                        msg.addRequestBlock(message.getBlock().getPreviousHash());
+                        msg.setRequest_block(message.getBlock().getPreviousHash());
                         //Richiedo dal blocco precedente e mi faccio mandare l'intera catena
                         communicator.sendRequest(msg);
                     }
-                    chain.printChain();
                 }
                 catch (Exception ex){
                     MyLogger.getInstance().error(Receiver.class.getName() + " - " + Constants.UUID,"Eccezione nell'acquire --> "+ex.toString(),ex);

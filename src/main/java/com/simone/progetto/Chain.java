@@ -49,6 +49,46 @@ public class Chain {
         return toRet;
     }
 
+    public boolean insertToChain(Node data,boolean dataFromOtherConsumer){
+        boolean toRet = false;
+        if(data.getData().getPreviousHash() == null) { //Nodo radice
+            root.add(data);
+            if(this.compareHeight(data)){//Aggiorno il punto da cui partire per il prossimo calcolo
+                this.startComputationNode = data;
+            }
+            toRet = true;
+        }
+        else{
+            if(root.size() > 0){
+                for (Node r: root) {
+                    if(insert(r,data,dataFromOtherConsumer)){
+                        toRet = true;
+                        break;
+                    }
+                }
+            }
+        }
+        return toRet;
+    }
+
+    public void setStartComputationNode(){
+        for (Node r: root) {
+            this.getMaxDepthNode(r);
+        }
+    }
+    public Node getMaxDepthNode(Node node){
+        if(startComputationNode == null || node.getHeight() > startComputationNode.getHeight()){
+            startComputationNode = node;
+        }
+        if(node.isLeaf()){
+            return null;
+        }
+        for (Node n: node.getChildren()) {
+            return getMaxDepthNode(n);
+        }
+        return null;
+    }
+
     public boolean hasBrotherResearch(Node node,String toSearch) {
         if (node.isLeaf()) {
             return false;
@@ -63,7 +103,7 @@ public class Chain {
         }
         return false;
     }
-    //TODO
+
     public boolean hasBrother(String parentHashToSearch){
         boolean toRet = false;
         if(root.size() > 0){
@@ -81,14 +121,7 @@ public class Chain {
         Node newChild = null;
         if(node.getData().getHash().equals(toInsert.getData().getPreviousHash())){
             if(checkHashTwoBlock(toInsert.getData(),node.getData())){
-                if(fromOtherConsumer){
-                    if(node.getHeight().equals(toInsert.getHeight() -1)){
-                        newChild = node.addChild(toInsert);
-                    }
-                }
-                else{
-                    newChild = node.addChild(toInsert);
-                }
+                newChild = node.addChild(toInsert);
                 if(newChild != null){
                     if(this.compareHeight(newChild)){//Aggiorno il punto da cui partire per il prossimo calcolo
                         this.startComputationNode = newChild;
@@ -115,7 +148,7 @@ public class Chain {
     }
 
     private void orderPreWalk(Node r){
-        MyLogger.getInstance().info(Chain.class.getName(),r.getData().toString());
+        MyLogger.getInstance().info(Chain.class.getName(),r.toString());
         if(r.isLeaf()){
             return;
         }
@@ -137,6 +170,41 @@ public class Chain {
         return toRet;
     }
 
+    public Node search(String hash){
+        Node toRet = null;
+        if(root.size() > 0){
+            for (Node r: root) {
+                if(r.getData().getHash().equals(hash)){
+                    toRet = r;
+                    break;
+                }
+                Node s = searchRecursive(r,hash);
+                if(s != null){
+                    toRet = s;
+                    break;
+                }
+            }
+        }
+        return toRet;
+    }
+
+    public Node searchRecursive(Node parent,String hash){
+        if(parent.getData().getHash().equals(hash)){
+            return parent;
+        }
+        else{
+            if(parent.isLeaf()){
+                return null;
+            }
+            else{
+                for (Node child: parent.getChildren()) {
+                    return searchRecursive(child,hash);
+                }
+            }
+        }
+        return null;
+    }
+
     private boolean checkHashTwoBlock(Block currentBlock, Block previousBlock){
         if(!currentBlock.getHash().equals(currentBlock.computeHash(false))){
             MyLogger.getInstance().info(Chain.class.getName() + " - " + Constants.UUID,"Hashcode del blocco corrente non corretto");
@@ -149,19 +217,30 @@ public class Chain {
         return true;
     }
 
-
+    private boolean checkValidityHash(Node node){
+        for (Node ch: node.getChildren()) {
+            if(!checkHashTwoBlock(ch.getData(),node.getData())){
+                return false;
+            }
+        }
+        if(node.isLeaf()){
+            return true;
+        }
+        for (Node ch: node.getChildren()) {
+            checkValidityHash(ch);
+        }
+        return true;
+    }
     //TODO
     private boolean isChainValid(List<Node> chain){
         boolean toRet = true;
-        int count = 0;
-        Block currentBlock;
-        Block previousBlock;
+        for (Node r: this.root) {
+            if(!checkValidityHash(r)){
+                toRet = false;
+                break;
+            }
+        }
         return toRet;
-    }
-    //TODO
-    public boolean setBlockFromOtherConsumer(Block currentBlock){
-        Block previousBlock;
-        return false;
     }
 
     public boolean setChain(List<Node> chain) {
