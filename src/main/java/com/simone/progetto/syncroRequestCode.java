@@ -15,9 +15,8 @@ import java.util.concurrent.Semaphore;
 public class syncroRequestCode {
     @Autowired
     private Chain chain;
-    @Autowired private Semaphore lock_chain;
     @Autowired private SyncronizationCodeResponseQueue communicator;
-
+/*
     @RabbitHandler
     public void receive(SyncroCodeRequestMessage syncroCodeRequestMessage){
         if(!syncroCodeRequestMessage.getId_applicant().equals(Constants.UUID)){
@@ -83,5 +82,7 @@ public class syncroRequestCode {
             System.exit(1);
         }
     }
+
+    */
 }
 

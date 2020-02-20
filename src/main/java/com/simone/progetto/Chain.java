@@ -4,121 +4,140 @@ import com.simone.progetto.utils.MyLogger;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
+import java.util.List;
 
 @Component
 public class Chain {
     private boolean toUpdate = true; //booleano che permette di syncronizzare la chain una sola volta
-    private ArrayList<Block> chain = new ArrayList<Block>();
+    private List<Node> root = new ArrayList<Node>();
+    private Node startComputationNode = null;
+
+    public Chain() {}
+
+    //TODO METEDO CHE MI DA L'ALTEZZA DELLO START COMPUTATION NODE
+
 
     public Block createBlock(Transaction transaction){
-        return new Block(transaction,this.getPreviousHash(),this.getIdNewBlock());
-    }
-
-    public ArrayList<Block> getChain() {
-        return chain;
-    }
-
-    public void insertBlock(Block b){
-        chain.add(b);
-    }
-
-    private String getPreviousHash(){
-        String previousHash = null;
-        if(!chain.isEmpty()){
-            previousHash = chain.get(chain.size()-1).getHash();
+        //Dobbiamo prendere l'hash del blocco che sta nella catena più lunga o in caso di parità prendo la prima
+        String prevHash = null;
+        if(startComputationNode != null){
+            prevHash = startComputationNode.getData().getHash();
         }
-        return previousHash;
+        return new Block(transaction,prevHash);
     }
 
-    private Integer getIdNewBlock(){
-        if(chain.size() == 0){
-            return 0;
-        }
-        else{
-            return chain.get(chain.size() - 1).getId_block() + 1;
-        }
-    }
-
-    public Integer getIdLastBlock(){
-        if(chain.size() == 0){
-            return -1;
-        }
-        else{
-            return chain.get(chain.size() - 1).getId_block();
-        }
-    }
-
-    public boolean isToUpdate() {
-        return toUpdate;
-    }
-
-    public void setToUpdate(boolean toUpdate) {
-        this.toUpdate = toUpdate;
-    }
-
-    private boolean isChainValid(ArrayList<Block> chain){
-        boolean toRet = true;
-        int count = 0;
-        Block currentBlock;
-        Block previousBlock;
-        MyLogger.getInstance().info(Chain.class.getName() + " - " + Constants.UUID,"---------------- Stato chain -----------------");
-        for (Block b: chain) {
-            MyLogger.getInstance().info(Receiver.class.getName() + " - " + Constants.UUID,"Chain element " + count + " --> " + b.toString());
-            count++;
-        }
-        MyLogger.getInstance().info(Chain.class.getName() + " - " + Constants.UUID,"----------------------------------------------");
-        for(int i = 1; i < chain.size(); i++){
-            previousBlock = getElementChain(chain,i-1);
-            currentBlock = getElementChain(chain,i);
-            if(previousBlock != null && currentBlock != null){
-                //Effettuiamo la comparazione tra l'hash registrato e quello computato sul momento
-                if (!checkHashTwoBlock(currentBlock, previousBlock)) toRet = false;
+    public boolean insertToChain(Block data,boolean dataFromOtherConsumer){
+        boolean toRet = false;
+        Node toInsert = new Node(data);
+        if(data.getPreviousHash() == null) { //Nodo radice
+            root.add(toInsert);
+            if(this.compareHeight(toInsert)){//Aggiorno il punto da cui partire per il prossimo calcolo
+                this.startComputationNode = toInsert;
             }
-            else{
-                toRet = false;
+            toRet = true;
+        }
+        else{
+            if(root.size() > 0){
+                for (Node r: root) {
+                    if(insert(r,toInsert,dataFromOtherConsumer)){
+                        toRet = true;
+                        break;
+                    }
+                }
             }
         }
         return toRet;
     }
 
-    public boolean setChain(ArrayList<Block> chain) {
-        if (this.isChainValid(chain)){
-            this.chain = new ArrayList<Block>(chain);
-            toUpdate = false;
+    public boolean hasBrotherResearch(Node node,String toSearch) {
+        if (node.isLeaf()) {
+            return false;
+        }
+        else if(node.getData().getHash().equals(toSearch) && node.getChildren().size() > 1) { //è il padre ed ha più di un figlio
             return true;
+        }
+        else{
+            for(Node child: node.getChildren()) {
+                return hasBrotherResearch(child,toSearch);
+            }
         }
         return false;
     }
-
-    public Block getElementChain(ArrayList<Block> blocksChain,Integer index){
-        Block b = null;
-        try {
-            b = blocksChain.get(index);
+    //TODO
+    public boolean hasBrother(String parentHashToSearch){
+        boolean toRet = false;
+        if(root.size() > 0){
+            for (Node r: root) {
+                if(hasBrotherResearch(r,parentHashToSearch)){
+                    toRet = true;
+                    break;
+                }
+            }
         }
-        catch (ArrayIndexOutOfBoundsException ex){
-            MyLogger.getInstance().error(Chain.class.getName() + " - " + Constants.UUID,"Elemento in Chain non esistente --> "+ex.toString(),ex);
-        }
-        return b;
+        return toRet;
     }
 
-    public boolean setBlockFromOtherConsumer(Block currentBlock){
-        Block previousBlock;
-        if(currentBlock.getId_block() > this.getIdLastBlock() + 1) { //Mancano alcuni blocchi nel mezzo e quindi ci sarà qualche errore
-            return false;
+    private boolean insert(Node node,Node toInsert,boolean fromOtherConsumer){
+        Node newChild = null;
+        if(node.getData().getHash().equals(toInsert.getData().getPreviousHash())){
+            if(checkHashTwoBlock(toInsert.getData(),node.getData())){
+                if(fromOtherConsumer){
+                    if(node.getHeight().equals(toInsert.getHeight() -1)){
+                        newChild = node.addChild(toInsert);
+                    }
+                }
+                else{
+                    newChild = node.addChild(toInsert);
+                }
+                if(newChild != null){
+                    if(this.compareHeight(newChild)){//Aggiorno il punto da cui partire per il prossimo calcolo
+                        this.startComputationNode = newChild;
+                        return true;
+                    }
+                }
+                return false;
+            }
         }
         else{
-            previousBlock = getElementChain(chain,currentBlock.getId_block());
-            if(previousBlock != null){
-                if (checkHashTwoBlock(currentBlock, previousBlock)){
-                    chain.set(currentBlock.getId_block(),currentBlock);
-                    return true;
-                }
+            for(Node child: node.getChildren()) {
+                return insert(child,toInsert,fromOtherConsumer);
             }
         }
         return false;
     }
 
-    private boolean checkHashTwoBlock(Block currentBlock, Block previousBlock) {
+    public void printChain(){
+        MyLogger.getInstance().info(Chain.class.getName(),"------------- CHAIN ----------------");
+        for (Node r: this.root) {
+            orderPreWalk(r);
+        }
+        MyLogger.getInstance().info(Chain.class.getName(),"----------------------------------");
+    }
+
+    private void orderPreWalk(Node r){
+        MyLogger.getInstance().info(Chain.class.getName(),r.getData().toString());
+        if(r.isLeaf()){
+            return;
+        }
+        for (Node ch: r.getChildren()) {
+            orderPreWalk(ch);
+        }
+    }
+
+    private boolean compareHeight(Node lastInserted){
+        boolean toRet = false;
+        if(this.startComputationNode == null){
+            toRet = true;
+        }
+        else{
+            if(lastInserted.getHeight() > this.startComputationNode.getHeight()){
+                toRet = true;
+            }
+        }
+        return toRet;
+    }
+
+    private boolean checkHashTwoBlock(Block currentBlock, Block previousBlock){
         if(!currentBlock.getHash().equals(currentBlock.computeHash(false))){
             MyLogger.getInstance().info(Chain.class.getName() + " - " + Constants.UUID,"Hashcode del blocco corrente non corretto");
             return false;
@@ -131,6 +150,51 @@ public class Chain {
     }
 
 
+    //TODO
+    private boolean isChainValid(List<Node> chain){
+        boolean toRet = true;
+        int count = 0;
+        Block currentBlock;
+        Block previousBlock;
+        return toRet;
+    }
+    //TODO
+    public boolean setBlockFromOtherConsumer(Block currentBlock){
+        Block previousBlock;
+        return false;
+    }
 
+    public boolean setChain(List<Node> chain) {
+        if (this.isChainValid(chain)){
+            this.root = chain;
+            toUpdate = false;
+            return true;
+        }
+        return false;
+    }
+
+    public boolean isToUpdate() {
+        return toUpdate;
+    }
+
+    public void setToUpdate(boolean toUpdate) {
+        this.toUpdate = toUpdate;
+    }
+
+    public List<Node> getRoot() {
+        return root;
+    }
+
+    public void setRoot(List<Node> root) {
+        this.root = root;
+    }
+
+    public Node getStartComputationNode() {
+        return startComputationNode;
+    }
+
+    public void setStartComputationNode(Node startComputationNode) {
+        this.startComputationNode = startComputationNode;
+    }
 
 }

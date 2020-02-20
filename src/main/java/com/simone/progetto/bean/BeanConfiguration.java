@@ -25,8 +25,4 @@ public class BeanConfiguration {
         return new syncroRequestCode();
     }
 
-    @Bean
-    public Semaphore getSemaphore(){
-        return new Semaphore(1);
-    }
 }

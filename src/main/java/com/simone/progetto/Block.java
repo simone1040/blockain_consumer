@@ -7,21 +7,23 @@ import java.util.Date;
 import java.util.Random;
 
 public class Block implements Serializable {
-    private Integer id_block; //Contatore che tiene traccia di quanti blocchi tiene la blockchain
     private String  id_consumer;//Id del miner che ha creato questo blocco
     private Transaction data;
     private String hash;
+    private Integer nonce;
     private Random random = new Random();
     private String previousHash;
     private long timestamp;
     private static final Integer LOW_SECOND = 1000;
     private static final Integer HIGH_SECOND = 8500;
+    private static final Integer LOW_NONCE = 1;
+    private static final Integer HIGH_NONCE = 32000;
 
-    public Block(Transaction data, String previousHash,Integer id_block) {
-        this.id_block = id_block;
+    public Block(Transaction data, String previousHash) {
         this.data = data;
         this.id_consumer =  Constants.UUID;
         this.previousHash = previousHash;
+        this.nonce = random.nextInt(HIGH_NONCE-LOW_NONCE) + LOW_NONCE;
         this.hash = this.computeHash(true);
     }
 
@@ -29,9 +31,9 @@ public class Block implements Serializable {
         if(compute_proof){
             this.computeProofOfWoork();
         }
-        String stringToHash = timestamp + data.getStringToHash();
+        String stringToHash = nonce + timestamp + data.getStringToHash();
         if(this.previousHash != null){
-            stringToHash = this.previousHash  + timestamp + data.getStringToHash();
+            stringToHash = this.previousHash  + nonce + timestamp + data.getStringToHash();
         }
         return Utils.applySha256(stringToHash);
     }
@@ -68,20 +70,17 @@ public class Block implements Serializable {
         return timestamp;
     }
 
-    public Integer getId_block() {
-        return id_block;
-    }
-
     @Override
     public String toString() {
         return "Block{" +
-                "id_block=" + id_block +
-                ", id_consumer=" + id_consumer +
+                "id_consumer=" + id_consumer +
                 ", Client Product=" + data.getId_client() +
                 ", Product name=" + data.getProduct().getName() +
                 ", Product price=" + data.getProduct().getPrice() +
                 ", Product quantity=" + data.getQuantity() +
                 ", timestamp=" + timestamp +
+                ", Hash=" + hash +
+                ", PreviousHash=" + previousHash +
                 '}';
     }
 }
