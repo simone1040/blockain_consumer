@@ -3,10 +3,10 @@ package com.simone.progetto.bean;
 import com.simone.progetto.Receiver;
 import com.simone.progetto.syncroRequestCode;
 import com.simone.progetto.SyncroQueue;
+import com.simone.progetto.utils.InsertChainSemaphore;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.util.concurrent.Semaphore;
 
 @Configuration
 public class BeanConfiguration {
@@ -25,4 +25,8 @@ public class BeanConfiguration {
         return new syncroRequestCode();
     }
 
+    @Bean
+    public InsertChainSemaphore InsertChainSemaphore() {
+        return new InsertChainSemaphore();
+    }
 }

@@ -54,6 +54,7 @@ public class Transaction implements Serializable{
 		return this.id_client.toString() + this.product.getName()
 				+ this.product.getPrice() + this.quantity.toString();
 	}
+
 	@Override
 	public String toString() {
 		return "Transaction [id_client=" + id_client + ", product=" + product + ", quantity=" + quantity

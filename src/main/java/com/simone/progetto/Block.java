@@ -1,30 +1,42 @@
 package com.simone.progetto;
 
+import com.simone.progetto.bean.BeanUtil;
+import com.simone.progetto.utils.Configuration;
+import com.simone.progetto.utils.InsertChainSemaphore;
 import com.simone.progetto.utils.MyLogger;
 import com.simone.progetto.utils.Utils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.util.StringUtils;
+
 import java.io.Serializable;
 import java.util.Date;
 import java.util.Random;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class Block implements Serializable {
+    private transient InsertChainSemaphore insertChainSemaphore;
     private String  id_consumer;//Id del miner che ha creato questo blocco
     private Transaction data;
-    private String hash;
+    private String hash = "";
     private Integer nonce;
     private Random random = new Random();
-    private String previousHash;
-    private long timestamp;
-    private static final Integer LOW_SECOND = 1000;
-    private static final Integer HIGH_SECOND = 8500;
-    private static final Integer LOW_NONCE = 1;
-    private static final Integer HIGH_NONCE = 32000;
+    private String previousHash = null;
+    private long timestamp = 0;
 
     public Block(Transaction data, String previousHash) {
         this.data = data;
-        this.id_consumer =  Constants.UUID;
+        this.id_consumer =  Configuration.UUID;
         this.previousHash = previousHash;
-        this.nonce = random.nextInt(HIGH_NONCE-LOW_NONCE) + LOW_NONCE;
+        this.nonce = random.nextInt(Configuration.MAX_NONCE-Configuration.MIN_NONCE) + Configuration.MIN_NONCE;
+        insertChainSemaphore = BeanUtil.getBean(InsertChainSemaphore.class);
         this.hash = this.computeHash(true);
+    }
+
+    public Block(){
+        this.id_consumer = "";
+        this.data = new Transaction(0,new Product("GENESIS",0),0,0);
+        this.hash = Configuration.GENESIS_HASH;
     }
 
     public String computeHash(boolean compute_proof){
@@ -43,14 +55,26 @@ public class Block implements Serializable {
     }
 
     private void computeProofOfWoork(){
-        int mseconds = (random.nextInt(HIGH_SECOND-LOW_SECOND) + LOW_SECOND);
+        int count_num_steps;
+        int number_of_step = (random.nextInt(Configuration.MAX_NUMBER_OF_STEPS-Configuration.MIN_NUMBER_OF_STEPS) + Configuration.MIN_NUMBER_OF_STEPS);
+        for(count_num_steps = 0; count_num_steps < number_of_step; count_num_steps++){
+            if(insertChainSemaphore.isToCompute()){
+                compute();
+            }
+        }
+        if(insertChainSemaphore.isToCompute()){
+            MyLogger.getInstance().info(Block.class.getName() + " - " + Configuration.UUID,
+                    "Tempo usato calcolare il proof of work in ms --> " + Configuration.MS_TIME_COMPUTE * count_num_steps);
+        }
+        this.timestamp = new Date().getTime();
+    }
+
+    private void compute(){
         try{
-            Thread.sleep(mseconds);
-            this.timestamp = new Date().getTime();
-            MyLogger.getInstance().info(Block.class.getName() + " - " + Constants.UUID,"Tempo usato calcolare il proof of work in ms --> " + mseconds);
+            Thread.sleep(Configuration.MS_TIME_COMPUTE);
         }
         catch (InterruptedException ex){
-            MyLogger.getInstance().info(Block.class.getName() + " - " + Constants.UUID,"Eccezione nello sleep --> " + ex);
+            MyLogger.getInstance().info(Block.class.getName() + " - " + Configuration.UUID,"Eccezione nello sleep --> " + ex);
         }
     }
 

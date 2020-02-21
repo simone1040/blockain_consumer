@@ -1,5 +1,5 @@
 package com.simone.progetto.syncro;
-import com.simone.progetto.Constants;
+import com.simone.progetto.utils.Configuration;
 import com.simone.progetto.utils.MyLogger;
 import org.springframework.amqp.core.FanoutExchange;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -31,7 +31,7 @@ public class SyncronizationQueue implements SyncroCommunicator {
 
     @EventListener(ApplicationReadyEvent.class)
     public void SyncronizationStartup() {
-        MyLogger.getInstance().info(SyncronizationQueue.class.getName() + " - " + Constants.UUID,"Richiesta syncronizzazione della coda");
-        communicator.sendRequest(new SyncroCodeRequestMessage(Constants.UUID, Constants.Status_request_block.ALL));
+        MyLogger.getInstance().info(SyncronizationQueue.class.getName() + " - " + Configuration.UUID,"Richiesta syncronizzazione della coda");
+        communicator.sendRequest(new SyncroCodeRequestMessage(Configuration.UUID, Configuration.Status_request_block.ALL));
     }
 }

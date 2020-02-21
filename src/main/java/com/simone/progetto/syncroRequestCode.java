@@ -3,6 +3,7 @@ package com.simone.progetto;
 import com.simone.progetto.syncro.SyncroCodeRequestMessage;
 import com.simone.progetto.syncro.SyncroCodeResponseMessage;
 import com.simone.progetto.syncro.SyncronizationCodeResponseQueue;
+import com.simone.progetto.utils.Configuration;
 import com.simone.progetto.utils.MyLogger;
 import org.springframework.amqp.rabbit.annotation.RabbitHandler;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
@@ -19,22 +20,14 @@ public class syncroRequestCode {
 
     @RabbitHandler
     public void receive(SyncroCodeRequestMessage syncroCodeRequestMessage){
-        if(!syncroCodeRequestMessage.getId_applicant().equals(Constants.UUID)){
-            SyncroCodeResponseMessage msg = new SyncroCodeResponseMessage(Constants.UUID,
-                    syncroCodeRequestMessage.getId_applicant(),syncroCodeRequestMessage.getRequest());
-            switch (syncroCodeRequestMessage.getRequest()){
-                case ALL:
-                    msg.setRequest_node(chain.getRoot());
-                    break;
-                case ANY:
-                    //Dal request prendo lo string dell'hash richiesto e mando il nodo con tutti i figli
-                    List<Node> toSend = new ArrayList<Node>();
-                    Node searched = chain.search(syncroCodeRequestMessage.getRequest_block());
-                    if(searched != null){
-                        toSend.add(searched);
-                        msg.setRequest_node(toSend);
-                    }
-                    break;
+        if(!syncroCodeRequestMessage.getId_applicant().equals(Configuration.UUID)){
+            SyncroCodeResponseMessage msg = new SyncroCodeResponseMessage(Configuration.UUID,
+                    syncroCodeRequestMessage.getId_applicant());
+            List<Node> toSend = new ArrayList<Node>();
+            Node searched = chain.searchBlock(syncroCodeRequestMessage.getRequest_block());
+            if(searched != null){
+                toSend.add(searched);
+                msg.setRequest_node(toSend);
             }
             //DEVO INVIARLO NELLA CODA
             communicator.sendResponse(msg);
@@ -44,57 +37,34 @@ public class syncroRequestCode {
     @RabbitHandler
     public void receive(SyncroCodeResponseMessage syncroCodeResponseMessage){
         boolean toExit = false;
-        if(!syncroCodeResponseMessage.getId_publisher().equals(Constants.UUID) &&
-        syncroCodeResponseMessage.getId_consumer().equals(Constants.UUID)){
-            try{
-                if(chain.isToUpdate()){//Controllo che già non sia stata effettuata la syncronizzazione
-                    switch (syncroCodeResponseMessage.getType_request()){
-                        case ALL:
-                            //Controllo che la chain sia valida
-                            if(chain.setChain(syncroCodeResponseMessage.getRequest_node())){
-                                chain.setStartComputationNode();
-                                MyLogger.getInstance().info(syncroRequestCode.class.getName() + " - " + Constants.UUID,
-                                        "Syncronizzazione del consumers con la blockchain effettuata correttamente{Caso ALL}");
-                                chain.printChain();
-                            }
-                            else{
-                                MyLogger.getInstance().info(syncroRequestCode.class.getName() + " - " + Constants.UUID,
-                                        "Syncronizzazione del consumers con la blockchain non effettuata correttamente,uscita{Caso ALL}");
-                                toExit = true;
-                            }
-                            break;
-                        case ANY:
-                            if(syncroCodeResponseMessage.getRequest_node().size() > 0){
-                                Node requested = syncroCodeResponseMessage.getRequest_node().get(0);
-                                if(chain.insertToChain(requested,true)){
-                                    MyLogger.getInstance().info(syncroRequestCode.class.getName() + " - " + Constants.UUID,
-                                            "Syncronizzazione del consumers con la blockchain effettuata correttamente{Caso Any}");
-                                    chain.printChain();
-                                }
-                                else{
-                                    if(requested.getParent() != null){
-                                        SyncroCodeRequestMessage msg = new SyncroCodeRequestMessage(Constants.UUID, Constants.Status_request_block.ANY);
-                                        msg.setRequest_block(requested.getParent().getData().getHash());
-                                        communicator.sendRequest(msg);
-                                    }
-                                    else{
-                                        MyLogger.getInstance().info(syncroRequestCode.class.getName() + " - " + Constants.UUID,
-                                                "Syncronizzazione del consumers con la blockchain non effettuata correttamente,uscita{Caso Any}");
-                                        toExit = true;
-                                    }
-                                }
-                            }
-                            break;
+        if(!syncroCodeResponseMessage.getId_publisher().equals(Configuration.UUID) &&
+        syncroCodeResponseMessage.getId_consumer().equals(Configuration.UUID)){
+            //Controllo che già non sia stata effettuata la syncronizzazione
+            if(syncroCodeResponseMessage.getRequest_node().size() > 0){
+                Node requested = syncroCodeResponseMessage.getRequest_node().get(0);
+                if(chain.insertToChain(requested)){
+                    MyLogger.getInstance().info(syncroRequestCode.class.getName() + " - " + Configuration.UUID,
+                            "Syncronizzazione del consumers con la blockchain effettuata correttamente{Caso Any}");
+                }
+                else{
+                    if(requested.getParent() != null){//Se non riesco ad aggiungere, vuol dire che manca qualcosa alla catena
+                        //Richiedo allora la catena che parte dal padre
+                        SyncroCodeRequestMessage msg = new SyncroCodeRequestMessage(Configuration.UUID);
+                        msg.setRequest_block(requested.getParent().getData().getHash());
+                        communicator.sendRequest(msg);
+                    }
+                    else{
+                        MyLogger.getInstance().info(syncroRequestCode.class.getName() + " - " + Configuration.UUID,
+                                "Syncronizzazione del consumers con la blockchain non effettuata correttamente,uscita{Caso Any}");
+                        toExit = true;
                     }
                 }
-            }
-            catch (Exception ex){
-                MyLogger.getInstance().error(syncroRequestCode.class.getName() + " - " + Constants.UUID,"Eccezione nell'acquire --> "+ex.toString(),ex);
             }
         }
         if (toExit){
             System.exit(1);
         }
+        chain.printChain();
     }
 
 
