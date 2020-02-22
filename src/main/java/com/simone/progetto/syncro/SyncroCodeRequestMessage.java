@@ -1,14 +1,17 @@
 package com.simone.progetto.syncro;
-import com.simone.progetto.utils.Configuration;
 import java.io.Serializable;
 
 public class SyncroCodeRequestMessage implements Serializable {
     private String id_applicant;
-    /* SE LO STATUS È ALL, ALLORA ARRAYLIST PUO RIMANERE VUOTA */
     private String request_block = null;
 
     public SyncroCodeRequestMessage(String id_applicant) {
         this.id_applicant = id_applicant;
+    }
+
+    public SyncroCodeRequestMessage(String id_applicant, String request_block) {
+        this.id_applicant = id_applicant;
+        this.request_block = request_block;
     }
 
     public String getId_applicant() {

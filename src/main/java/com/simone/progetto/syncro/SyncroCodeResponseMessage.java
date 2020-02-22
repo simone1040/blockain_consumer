@@ -1,16 +1,13 @@
 package com.simone.progetto.syncro;
 
-import com.simone.progetto.utils.Configuration;
 import com.simone.progetto.Node;
-
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Stack;
 
 public class SyncroCodeResponseMessage implements Serializable {
     private String id_publisher;
     private String id_consumer;
-    private List<Node> request_node = new ArrayList<Node>();
+    private Stack<Node> request_node = new Stack<Node>();
 
     public SyncroCodeResponseMessage(String id_publisher,String id_consumer) {
         this.id_publisher = id_publisher;
@@ -25,12 +22,12 @@ public class SyncroCodeResponseMessage implements Serializable {
         return id_consumer;
     }
 
-    public List<Node> getRequest_node() {
+    public Stack<Node> getRequest_node() {
         return request_node;
     }
 
-    public void setRequest_node(List<Node> request_node) {
-        this.request_node = new ArrayList<Node>(request_node);
+    public void setRequest_node(Stack<Node> request_node) {
+        this.request_node = request_node;
     }
 
     public void add_node(Node toSend){

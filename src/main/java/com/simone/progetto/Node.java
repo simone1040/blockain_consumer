@@ -4,12 +4,12 @@ import java.io.Serializable;
 public class Node implements Serializable {
     private Node parent = null;
     private Integer height = 1;
-    private Block data = null;
+    private Block data;
 
-    public Node(Node parent, Block data,Integer height) {
+    public Node(Node parent, Block data) {
         this.parent = parent;
         this.data = data;
-        this.height = height;
+        this.height = parent.getHeight() + 1;
     }
 
     public Node(Block data) {

@@ -5,14 +5,10 @@ import com.simone.progetto.utils.Configuration;
 import com.simone.progetto.utils.InsertChainSemaphore;
 import com.simone.progetto.utils.MyLogger;
 import com.simone.progetto.utils.Utils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.util.StringUtils;
-
 import java.io.Serializable;
 import java.util.Date;
 import java.util.Random;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
+
 
 public class Block implements Serializable {
     private transient InsertChainSemaphore insertChainSemaphore;

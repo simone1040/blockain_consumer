@@ -19,13 +19,13 @@ public class SyncroQueue {
     public void receive_syncro(SyncroMessage message){
         if(!message.getId_consumer().equals(Configuration.UUID)){//Messaggio che non arriva da me stesso
             //Controlliamo che il blocco abbia l'hash giusto.
-            if(message.getBlock().computeHash(false).equals(message.getBlock().getHash())){//Hash corretto
+            if(chain.checkHashBlock(message.getBlock())){//Hash corretto
                 if(chain.insertToChain(message.getBlock())){
                     insertChainSemaphore.blockComputation();
                     MyLogger.getInstance().info(Receiver.class.getName() + " - " + Configuration.UUID,"Blocco Inserito correttamente{Proveniente da altro consumer}");
                 }
                 else{//Non Ho inserito correttamente, potrebbe mancarmi qualcosa
-                    SyncroCodeRequestMessage msg = new SyncroCodeRequestMessage(Configuration.UUID, Configuration.Status_request_block.ANY);
+                    SyncroCodeRequestMessage msg = new SyncroCodeRequestMessage(Configuration.UUID);
                     msg.setRequest_block(message.getBlock().getPreviousHash());
                     //Richiedo dal blocco precedente e mi faccio mandare l'intera catena a partire da esso
                     communicator.sendRequest(msg);

@@ -19,6 +19,7 @@ public class Receiver {
 
 	@RabbitListener(queues = "#{TransactionQueue.name}")
 	public void receive(Transaction transaction){
+		insertChainSemaphore.restartSemaphore();
 		MyLogger.getInstance().info(Receiver.class.getName() + " - " + Configuration.UUID,"Transazione arrivata --> " + transaction.getProduct().getName());
 		if(transactionRules.canInsert(transaction)){
 			Block b = chain.createBlock(transaction);
@@ -40,7 +41,6 @@ public class Receiver {
 		else {
 			MyLogger.getInstance().info(Receiver.class.getName() + " - " + Configuration.UUID,"transaction non inserita, non ha superato i controlli");
 		}
-		insertChainSemaphore.restartSemaphore();
 		chain.printChain();
 	}
 }

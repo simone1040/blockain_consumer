@@ -32,6 +32,6 @@ public class SyncronizationQueue implements SyncroCommunicator {
     @EventListener(ApplicationReadyEvent.class)
     public void SyncronizationStartup() {
         MyLogger.getInstance().info(SyncronizationQueue.class.getName() + " - " + Configuration.UUID,"Richiesta syncronizzazione della coda");
-        communicator.sendRequest(new SyncroCodeRequestMessage(Configuration.UUID, Configuration.Status_request_block.ALL));
+        communicator.sendRequest(new SyncroCodeRequestMessage(Configuration.UUID,Configuration.GENESIS_HASH));
     }
 }
