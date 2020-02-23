@@ -15,21 +15,29 @@ public class SyncroQueue {
     @Autowired private InsertChainSemaphore insertChainSemaphore;
     @Autowired private SyncronizationCodeResponseQueue communicator;
 
+    public void requestPreviousBlock(String previousHash){
+        SyncroCodeRequestMessage msg = new SyncroCodeRequestMessage(Configuration.UUID);
+        msg.setRequest_block(previousHash);
+        //Richiedo dal blocco precedente e mi faccio mandare l'intera catena a partire da esso
+        communicator.sendRequest(msg);
+    }
+
+    public void tryToInsertFromOtherConsumer(Block block){
+        if(chain.insertToChain(block)){
+            insertChainSemaphore.blockComputation();
+            MyLogger.getInstance().info(Receiver.class.getName() + " - " + Configuration.UUID,"Blocco Inserito correttamente{Proveniente da altro consumer}");
+        }
+        else{//Non Ho inserito correttamente, potrebbe mancarmi qualcosa
+            this.requestPreviousBlock(block.getPreviousHash());
+        }
+    }
+
     @RabbitListener(queues = "#{SyncroQueue.name}")
     public void receive_syncro(SyncroMessage message){
         if(!message.getId_consumer().equals(Configuration.UUID)){//Messaggio che non arriva da me stesso
             //Controlliamo che il blocco abbia l'hash giusto.
             if(chain.checkHashBlock(message.getBlock())){//Hash corretto
-                if(chain.insertToChain(message.getBlock())){
-                    insertChainSemaphore.blockComputation();
-                    MyLogger.getInstance().info(Receiver.class.getName() + " - " + Configuration.UUID,"Blocco Inserito correttamente{Proveniente da altro consumer}");
-                }
-                else{//Non Ho inserito correttamente, potrebbe mancarmi qualcosa
-                    SyncroCodeRequestMessage msg = new SyncroCodeRequestMessage(Configuration.UUID);
-                    msg.setRequest_block(message.getBlock().getPreviousHash());
-                    //Richiedo dal blocco precedente e mi faccio mandare l'intera catena a partire da esso
-                    communicator.sendRequest(msg);
-                }
+                this.tryToInsertFromOtherConsumer(message.getBlock());
             }
             else{
                 MyLogger.getInstance().info(Receiver.class.getName() + " - " + Configuration.UUID,"Blocco con Hash scorretto, il blocco viene scartato");

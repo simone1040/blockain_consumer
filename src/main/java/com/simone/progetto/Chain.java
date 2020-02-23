@@ -88,7 +88,7 @@ public class Chain {
         Node toRet = null;
         while(tmp != null && toRet == null){
             if(tmp.getData().getHash().equals(node.getData().getPreviousHash())){
-                toRet = new Node(top,node.getData());
+                toRet = new Node(tmp,node.getData());
             }
             tmp = tmp.getParent();
         }
@@ -188,10 +188,6 @@ public class Chain {
         topList = new ArrayList<>();
         startComputationNode = root;
         topList.add(root);
-    }
-
-    public Node getStartComputationNode() {
-        return startComputationNode;
     }
 
     public ArrayList<Node> getTopList() {

@@ -17,6 +17,19 @@ public class Receiver {
 	@Qualifier("syncronization_queue")
 	@Autowired private SyncroCommunicator communicator;
 
+
+
+	public void tryToInsert(Block block){
+		if(chain.insertToChain(block)){
+			MyLogger.getInstance().info(Receiver.class.getName() + " - " + Configuration.UUID,"Blocco Inserito correttamente{Inserita da me}");
+			communicator.sendMessage(new SyncroMessage(block));
+			MyLogger.getInstance().info(Receiver.class.getName() + " - " + Configuration.UUID,"Messaggio di syncronizzazione inviato a tutti i consumers");
+		}
+		else{
+			MyLogger.getInstance().info(Receiver.class.getName() + " - " + Configuration.UUID,"Transazione non inserita correttamente");
+		}
+	}
+
 	@RabbitListener(queues = "#{TransactionQueue.name}")
 	public void receive(Transaction transaction){
 		insertChainSemaphore.restartSemaphore();
@@ -24,15 +37,7 @@ public class Receiver {
 		if(transactionRules.canInsert(transaction)){
 			Block b = chain.createBlock(transaction);
 			if(insertChainSemaphore.isToCompute()){
-				MyLogger.getInstance().info(Receiver.class.getName() + " - " + Configuration.UUID,"Blocco creato --> " + b.toString());
-				if(chain.insertToChain(b)){
-					MyLogger.getInstance().info(Receiver.class.getName() + " - " + Configuration.UUID,"Blocco Inserito correttamente{Inserita da me}");
-					communicator.sendMessage(new SyncroMessage(b));
-					MyLogger.getInstance().info(Receiver.class.getName() + " - " + Configuration.UUID,"Messaggio di syncronizzazione inviato a tutti i consumers");
-				}
-				else{
-					MyLogger.getInstance().info(Receiver.class.getName() + " - " + Configuration.UUID,"Transazione non inserita correttamente");
-				}
+				this.tryToInsert(b);
 			}
 			else{
 				MyLogger.getInstance().info(Receiver.class.getName() + " - " + Configuration.UUID,"Terminata la computazione perchè blocco già risolto da un altro consumer");
@@ -43,4 +48,6 @@ public class Receiver {
 		}
 		chain.printChain();
 	}
+
+
 }

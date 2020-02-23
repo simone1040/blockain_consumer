@@ -16,29 +16,48 @@ public class syncroRequestCode {
     private Chain chain;
     @Autowired private SyncronizationCodeResponseQueue communicator;
 
+    public Stack<Node> insertElementToStack(Stack<Node> stack,Stack<Node> toInsert){
+        if(stack == null){
+            stack = new Stack<>();
+        }
+        toInsert.addAll(stack);
+        return toInsert;
+    }
+
+    public Stack<Node> getBLockToReturn(String researchHash){
+        Stack<Node> toSend = null;
+        Stack<Node> temp;
+        for (Node node: chain.getTopList()) {
+            //CERCO IL BLOCCO IN OGNI CATENA E RITORNO TUTTI QUELLI CHE LO SUCCEDONO
+            temp = chain.searchListOfBlock(node,researchHash);
+            if(temp != null){
+                toSend = this.insertElementToStack(toSend,temp);
+            }
+        }
+        return  toSend;
+    }
+
+    public void tryToSendSyncroMessage(SyncroCodeResponseMessage msg,Stack<Node> toSend){
+        if(toSend.size() > 0){
+            msg.setRequest_node(toSend);
+            //DEVO INVIARLO NELLA CODA
+            communicator.sendResponse(msg);
+        }
+        else{
+            MyLogger.getInstance().info(syncroRequestCode.class.getName() + " - " + Configuration.UUID,
+                    "Non rispondo perchè il consumer è già sincronizzato !");
+        }
+    }
+
     @RabbitHandler
     public void receive(SyncroCodeRequestMessage syncroCodeRequestMessage){
-        Stack<Node> toSend = null;
+        Stack<Node> toSend;
         if(!syncroCodeRequestMessage.getId_applicant().equals(Configuration.UUID)){
             SyncroCodeResponseMessage msg = new SyncroCodeResponseMessage(Configuration.UUID,
                     syncroCodeRequestMessage.getId_applicant());
-            for (Node node: chain.getTopList()) {
-                //CERCO IL BLOCCO IN OGNI CATENA E RITORNO TUTTI QUELLI CHE LO SUCCEDONO
-                toSend = chain.searchListOfBlock(node,syncroCodeRequestMessage.getRequest_block());
-                if(toSend != null){
-                    break;
-                }
-            }
+            toSend = this.getBLockToReturn(syncroCodeRequestMessage.getRequest_block());
             if(toSend != null){
-                if(toSend.size() > 0){
-                    msg.setRequest_node(toSend);
-                    //DEVO INVIARLO NELLA CODA
-                    communicator.sendResponse(msg);
-                }
-                else{
-                    MyLogger.getInstance().info(syncroRequestCode.class.getName() + " - " + Configuration.UUID,
-                            "Non rispondo perchè il consumer è già sincronizzato !");
-                }
+                this.tryToSendSyncroMessage(msg,toSend);
             }
             else{
                 MyLogger.getInstance().info(syncroRequestCode.class.getName() + " - " + Configuration.UUID,
@@ -47,33 +66,42 @@ public class syncroRequestCode {
         }
     }
 
+    public void trySendSynchronizeRequest(Node parent){
+        if (parent != null) {
+            MyLogger.getInstance().info(syncroRequestCode.class.getName() + " - " + Configuration.UUID,
+                    "Syncronizzazione del consumers con la blockchain non effettuata poichè " +
+                            "manca qualche blocco precedente");
+            SyncroCodeRequestMessage msg = new SyncroCodeRequestMessage(Configuration.UUID,parent.getData().getHash());
+            communicator.sendRequest(msg);
+        }
+    }
+
+    public boolean synchronizeChain(Stack<Node> syncStack){
+        boolean syncro = true;
+        Node toInsert;
+        while (syncStack.size() > 0 && syncro) { //INserisco finchè lo stack è pieno
+            toInsert = syncStack.pop();
+            if(chain.checkHashBlock(toInsert.getData())){
+                if (!chain.insertToChain(toInsert)) {
+                    syncro = false;
+                    this.trySendSynchronizeRequest(toInsert.getParent());
+                }
+            }
+        }
+        return syncro;
+    }
+
     @RabbitHandler
     public void receive(SyncroCodeResponseMessage syncroCodeResponseMessage){
-        boolean syncro = true;
-        Node toInsert = null;
+        boolean syncro;
         if(!syncroCodeResponseMessage.getId_publisher().equals(Configuration.UUID) &&
         syncroCodeResponseMessage.getId_consumer().equals(Configuration.UUID)) {
             //Controllo che già non sia stata effettuata la syncronizzazione
-            if (chain.isToUpdate()) { ;
-                while (syncroCodeResponseMessage.getRequest_node().size() > 0 && syncro) { //INserisco finchè lo stack è pieno
-                    toInsert = syncroCodeResponseMessage.getRequest_node().pop();
-                    if(chain.checkHashBlock(toInsert.getData())){
-                        if (!chain.insertToChain(toInsert)) {
-                            syncro = false;
-                            if (toInsert.getParent() != null) {
-                                MyLogger.getInstance().info(syncroRequestCode.class.getName() + " - " + Configuration.UUID,
-                                        "Syncronizzazione del consumers con la blockchain non effettuata poichè " +
-                                                "manca qualche blocco precedente");
-                                SyncroCodeRequestMessage msg = new SyncroCodeRequestMessage(Configuration.UUID,toInsert.getParent().getData().getHash());
-                                communicator.sendRequest(msg);
-                            }
-                        }
-                    }
-                }
+            if (chain.isToUpdate()){
+                syncro = this.synchronizeChain(syncroCodeResponseMessage.getRequest_node());
                 if (syncro) {
                     MyLogger.getInstance().info(syncroRequestCode.class.getName() + " - " + Configuration.UUID,
                                 "Syncronizzazione del consumers con la blockchain effettuata correttamente ! ");
-                    chain.restartTopList(toInsert);
                     chain.setToUpdate(false);
                     chain.printChain();
                 }
