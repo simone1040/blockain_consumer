@@ -12,8 +12,7 @@ import java.util.Stack;
 
 @RabbitListener(id="multi",queues = "#{SyncroRequestCode.name}")
 public class syncroRequestCode {
-    @Autowired
-    private Chain chain;
+    @Autowired private Chain chain;
     @Autowired private SyncronizationCodeResponseQueue communicator;
 
     public Stack<Node> insertElementToStack(Stack<Node> stack,Stack<Node> toInsert){

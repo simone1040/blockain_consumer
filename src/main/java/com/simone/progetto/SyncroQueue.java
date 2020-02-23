@@ -16,16 +16,16 @@ public class SyncroQueue {
     @Autowired private SyncronizationCodeResponseQueue communicator;
 
     public void requestPreviousBlock(String previousHash){
-        SyncroCodeRequestMessage msg = new SyncroCodeRequestMessage(Configuration.UUID);
-        msg.setRequest_block(previousHash);
+        SyncroCodeRequestMessage msg = new SyncroCodeRequestMessage(Configuration.UUID,previousHash);
         //Richiedo dal blocco precedente e mi faccio mandare l'intera catena a partire da esso
         communicator.sendRequest(msg);
     }
 
-    public void tryToInsertFromOtherConsumer(Block block){
+    public void tryToInsertBlockFromOtherConsumer(Block block){
         if(chain.insertToChain(block)){
             insertChainSemaphore.blockComputation();
-            MyLogger.getInstance().info(Receiver.class.getName() + " - " + Configuration.UUID,"Blocco Inserito correttamente{Proveniente da altro consumer}");
+            MyLogger.getInstance().info(Receiver.class.getName() + " - " + Configuration.UUID,
+                    "Blocco Inserito correttamente{Proveniente da altro consumer}");
         }
         else{//Non Ho inserito correttamente, potrebbe mancarmi qualcosa
             this.requestPreviousBlock(block.getPreviousHash());
@@ -37,10 +37,11 @@ public class SyncroQueue {
         if(!message.getId_consumer().equals(Configuration.UUID)){//Messaggio che non arriva da me stesso
             //Controlliamo che il blocco abbia l'hash giusto.
             if(chain.checkHashBlock(message.getBlock())){//Hash corretto
-                this.tryToInsertFromOtherConsumer(message.getBlock());
+                this.tryToInsertBlockFromOtherConsumer(message.getBlock());
             }
             else{
-                MyLogger.getInstance().info(Receiver.class.getName() + " - " + Configuration.UUID,"Blocco con Hash scorretto, il blocco viene scartato");
+                MyLogger.getInstance().info(Receiver.class.getName() + " - " + Configuration.UUID,
+                        "Blocco con Hash scorretto, il blocco viene scartato");
             }
         }
     }
