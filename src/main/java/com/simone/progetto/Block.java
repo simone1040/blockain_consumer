@@ -3,13 +3,18 @@ package com.simone.progetto;
 import com.simone.progetto.bean.BeanUtil;
 import com.simone.progetto.utils.Configuration;
 import com.simone.progetto.utils.InsertChainSemaphore;
-import com.simone.progetto.utils.MyLogger;
 import com.simone.progetto.utils.Utils;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
+
 import java.io.Serializable;
 import java.util.Date;
 import java.util.Random;
 
-
+@Getter
+@Setter
+@Slf4j
 public class Block implements Serializable {
     private transient InsertChainSemaphore insertChainSemaphore;
     private String  id_consumer;//Id del miner che ha creato questo blocco
@@ -45,11 +50,7 @@ public class Block implements Serializable {
         }
         return Utils.applySha256(stringToHash);
     }
-
-    public String getId_consumer() {
-        return id_consumer;
-    }
-
+    
     private void computeProofOfWoork(){
         int count_num_steps;
         int number_of_step = (random.nextInt(Configuration.MAX_NUMBER_OF_STEPS-Configuration.MIN_NUMBER_OF_STEPS) + Configuration.MIN_NUMBER_OF_STEPS);
@@ -59,8 +60,7 @@ public class Block implements Serializable {
             }
         }
         if(insertChainSemaphore.isToCompute()){
-            MyLogger.getInstance().info(Block.class.getName() + " - " + Configuration.UUID,
-                    "Tempo usato calcolare il proof of work in ms --> " + Configuration.MS_TIME_COMPUTE * count_num_steps);
+            log.info("{"+Configuration.UUID + "} proof of work time computation --> " + Configuration.MS_TIME_COMPUTE * count_num_steps);
         }
         this.timestamp = new Date().getTime();
     }
@@ -70,24 +70,8 @@ public class Block implements Serializable {
             Thread.sleep(Configuration.MS_TIME_COMPUTE);
         }
         catch (InterruptedException ex){
-            MyLogger.getInstance().info(Block.class.getName() + " - " + Configuration.UUID,"Eccezione nello sleep --> " + ex);
+            log.info("{"+Configuration.UUID + "} sleep Exception --> " + ex.getMessage() );
         }
-    }
-
-    public Transaction getData() {
-        return data;
-    }
-
-    public String getHash() {
-        return hash;
-    }
-    
-    public String getPreviousHash() {
-        return previousHash;
-    }
-
-    public long getTimestamp() {
-        return timestamp;
     }
 
     @Override

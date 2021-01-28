@@ -1,0 +1,22 @@
+version: "3"
+volumes:
+  receiver:
+services:
+  rabbitmq:
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    image: "rabbitmq:3-management"
+    deploy:
+      replicas: 1
+
+  receiver:
+    image: receiver
+    depends_on:
+      - rabbitmq
+    environment:
+      - HOST=rabbitmq
+    deploy:
+      replicas: 2
+    volumes:
+    - receiver:/tmp/ReceiverBlockchain

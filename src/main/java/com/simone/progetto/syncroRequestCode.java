@@ -4,13 +4,17 @@ import com.simone.progetto.syncro.SyncroCodeRequestMessage;
 import com.simone.progetto.syncro.SyncroCodeResponseMessage;
 import com.simone.progetto.syncro.SyncronizationCodeResponseQueue;
 import com.simone.progetto.utils.Configuration;
-import com.simone.progetto.utils.MyLogger;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitHandler;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
 import java.util.Stack;
 
 @RabbitListener(id="multi",queues = "#{SyncroRequestCode.name}")
+@Component
+@Slf4j
 public class syncroRequestCode {
     @Autowired private Chain chain;
     @Autowired private SyncronizationCodeResponseQueue communicator;
@@ -43,8 +47,7 @@ public class syncroRequestCode {
             communicator.sendResponse(msg);
         }
         else{
-            MyLogger.getInstance().info(syncroRequestCode.class.getName() + " - " + Configuration.UUID,
-                    "Non rispondo perchè il consumer è già sincronizzato !");
+            log.info("{"+Configuration.UUID + "} Consumer already syncronized");
         }
     }
 
@@ -59,17 +62,14 @@ public class syncroRequestCode {
                 this.tryToSendSyncroMessage(msg,toSend);
             }
             else{
-                MyLogger.getInstance().info(syncroRequestCode.class.getName() + " - " + Configuration.UUID,
-                        "Non rispondo perchè non ho trovato il blocco richiesto!");
+                log.info("{"+Configuration.UUID + "} Block not found, i can't answer !");
             }
         }
     }
 
     public void trySendSynchronizeRequest(Node parent){
         if (parent != null) {
-            MyLogger.getInstance().info(syncroRequestCode.class.getName() + " - " + Configuration.UUID,
-                    "Syncronizzazione del consumers con la blockchain non effettuata poichè " +
-                            "manca qualche blocco precedente");
+            log.info("{"+Configuration.UUID + "} precedent block is missing, i can't syncronize queue!");
             SyncroCodeRequestMessage msg = new SyncroCodeRequestMessage(Configuration.UUID,parent.getData().getHash());
             communicator.sendRequest(msg);
         }
@@ -99,8 +99,7 @@ public class syncroRequestCode {
             if (chain.isToUpdate()){
                 syncro = this.synchronizeChain(syncroCodeResponseMessage.getRequest_node());
                 if (syncro) {
-                    MyLogger.getInstance().info(syncroRequestCode.class.getName() + " - " + Configuration.UUID,
-                                "Syncronizzazione del consumers con la blockchain effettuata correttamente ! ");
+                    log.info("{"+Configuration.UUID + "} syncronization queue correctly done !");
                     chain.setToUpdate(false);
                     chain.printChain();
                 }

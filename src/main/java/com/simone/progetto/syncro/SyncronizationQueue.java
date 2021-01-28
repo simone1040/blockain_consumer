@@ -1,6 +1,6 @@
 package com.simone.progetto.syncro;
 import com.simone.progetto.utils.Configuration;
-import com.simone.progetto.utils.MyLogger;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.FanoutExchange;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,6 +10,7 @@ import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
 @Service("syncronization_queue")
+@Slf4j
 public class SyncronizationQueue implements SyncroCommunicator {
     private final RabbitTemplate rabbitTemplate;
 
@@ -31,7 +32,7 @@ public class SyncronizationQueue implements SyncroCommunicator {
 
     @EventListener(ApplicationReadyEvent.class)
     public void SyncronizationStartup() {
-        MyLogger.getInstance().info(SyncronizationQueue.class.getName() + " - " + Configuration.UUID,"Richiesta syncronizzazione della coda");
+        log.info("{"+Configuration.UUID + "} Syncro request");
         communicator.sendRequest(new SyncroCodeRequestMessage(Configuration.UUID,Configuration.GENESIS_HASH));
     }
 }

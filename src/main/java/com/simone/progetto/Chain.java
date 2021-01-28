@@ -1,22 +1,28 @@
 package com.simone.progetto;
 
 import com.simone.progetto.utils.Configuration;
-import com.simone.progetto.utils.MyLogger;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
 
 @Component
+@Getter
+@Setter
+@Slf4j
 public class Chain {
     private boolean toUpdate = true; //booleano che permette di syncronizzare la chain una sola volta
     private Node root;
-    private Node startComputationNode = null;
-    private ArrayList<Node> topList = new ArrayList<Node>();
+    private Node startComputationNode;
+    private ArrayList<Node> topList = new ArrayList<>();
+    private final Object lockObj = new Object();
 
     public Chain() {
         //Creazione del block genesis
         root = startComputationNode = new Node(new Block());
-        topList.add(root);
+        getTopList().add(root);
     }
 
 
@@ -37,7 +43,7 @@ public class Chain {
     public boolean insertToChain(Block data){
         Node toInsert = new Node(data);
         boolean insert = false;
-        for (Node n: topList) {
+        for (Node n: getTopList()) {
             if(n.getData().getHash().equals(data.getPreviousHash())){
                 toInsert = new Node(n,data);
                 insert = true;
@@ -61,7 +67,7 @@ public class Chain {
 
     public boolean insertToChain(Node toInsert){
         boolean insert = false;
-        for (Node n: topList) {
+        for (Node n: getTopList()) {
             if(n.getData().getHash().equals(toInsert.getData().getPreviousHash())){
                 toInsert = new Node(n,toInsert.getData());
                 insert = true;
@@ -96,15 +102,15 @@ public class Chain {
     }
 
     private void updateNodeToplist(Node newNode){
-        topList.removeIf(node -> node.getData().getHash().equals(newNode.getData().getPreviousHash()));
-        topList.add(newNode);
+        getTopList().removeIf(node -> node.getData().getHash().equals(newNode.getData().getPreviousHash()));
+        getTopList().add(newNode);
         this.sortToplist(); //Ordino i blocchi per altezza
     }
 
     private void cleanForkChain(){
         int maxHeight = this.getMaxHeightChain();
-        if(topList.removeIf(node -> deleteRule(node, maxHeight))){
-            MyLogger.getInstance().info(Chain.class.getName()+ " - " + Configuration.UUID,"Blockchain pulita dai fork !");
+        if(getTopList().removeIf(node -> deleteRule(node, maxHeight))){
+            log.info("{"+Configuration.UUID + "} Blockchain cleaned from fork !");
         }
     }
 
@@ -119,19 +125,19 @@ public class Chain {
     }
 
     public void printChain(){
-        MyLogger.getInstance().info(Chain.class.getName()+ " - " + Configuration.UUID,"------------- CHAIN ----------------");
-        for (Node r: topList) {
-            MyLogger.getInstance().info(Chain.class.getName()+ " - " + Configuration.UUID,"------------- RAMO CHAIN ----------------");
+        log.info("{"+Configuration.UUID + "} ------------- CHAIN ----------------");
+        for (Node r: getTopList()) {
+            log.info("{"+Configuration.UUID + "} ------------- RAMO CHAIN ----------------");
             printChainAncestor(r);
-            MyLogger.getInstance().info(Chain.class.getName()+ " - " + Configuration.UUID,"----------------------------------");
+            log.info("{"+Configuration.UUID + "} ----------------------------------");
         }
-        MyLogger.getInstance().info(Chain.class.getName()+ " - " + Configuration.UUID,"----------------------------------");
+        log.info("{"+Configuration.UUID + "} ----------------------------------");
     }
 
     private void printChainAncestor(Node r){
         Node tmp = r;
         while(tmp != null){
-            MyLogger.getInstance().info(Chain.class.getName()+ " - " + Configuration.UUID,tmp.toString());
+            log.info("{"+Configuration.UUID + "} " + tmp.toString());
             tmp = tmp.getParent();
         }
     }
@@ -146,7 +152,7 @@ public class Chain {
 
     public boolean checkHashBlock(Block currentBlock){
         if(!currentBlock.getHash().equals(currentBlock.computeHash(false))){
-            MyLogger.getInstance().info(Chain.class.getName() + " - " + Configuration.UUID,"Hashcode del blocco corrente non corretto");
+            log.info("{"+Configuration.UUID + "} hashcode for this block is wrong");
             return false;
         }
         return true;
@@ -171,31 +177,13 @@ public class Chain {
         return null;
     }
 
-    public boolean isToUpdate() {
-        return toUpdate;
-    }
-
-    public void setToUpdate(boolean toUpdate) {
-        this.toUpdate = toUpdate;
-    }
-
-    public void restartTopList(Node node){
-        topList = new ArrayList<>();
-        topList.add(node);
-    }
-
-    public void restartTopList(){
-        topList = new ArrayList<>();
-        startComputationNode = root;
-        topList.add(root);
+    public void sortToplist(){
+        getTopList().sort(Comparator.comparing(Node::getHeight).reversed());
     }
 
     public ArrayList<Node> getTopList() {
-        return topList;
+        synchronized (lockObj){
+            return topList;
+        }
     }
-
-    public void sortToplist(){
-        topList.sort(Comparator.comparing(Node::getHeight).reversed());
-    }
-
 }

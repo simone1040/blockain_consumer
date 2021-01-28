@@ -1,9 +1,14 @@
 package com.simone.progetto.syncro;
 import com.simone.progetto.Block;
 import com.simone.progetto.utils.Configuration;
+import lombok.Getter;
+import lombok.Setter;
+
 import java.io.Serializable;
 import java.util.Date;
 
+@Getter
+@Setter
 public class SyncroMessage implements Serializable {
     private String id_consumer;
     private long timestamp;
@@ -19,15 +24,4 @@ public class SyncroMessage implements Serializable {
         return  new Date().getTime();
     }
 
-    public String getId_consumer() {
-        return id_consumer;
-    }
-
-    public long getTimestamp() {
-        return timestamp;
-    }
-
-    public Block getBlock() {
-        return block;
-    }
 }

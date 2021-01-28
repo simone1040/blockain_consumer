@@ -1,6 +1,11 @@
 package com.simone.progetto;
+import lombok.Getter;
+import lombok.Setter;
+
 import java.io.Serializable;
 
+@Getter
+@Setter
 public class Node implements Serializable {
     private Node parent = null;
     private Integer height = 1;
@@ -16,32 +21,8 @@ public class Node implements Serializable {
         this.data = data;
     }
 
-    public Node getParent() {
-        return parent;
-    }
-
-    public void setParent(Node parent) {
-        this.parent = parent;
-    }
-
-    public Block getData() {
-        return data;
-    }
-
-    public void setData(Block data) {
-        this.data = data;
-    }
-
     public boolean isRoot() {
         return (this.parent == null);
-    }
-
-    public Integer getHeight() {
-        return height;
-    }
-
-    public void setHeight(Integer height) {
-        this.height = height;
     }
 
     @Override

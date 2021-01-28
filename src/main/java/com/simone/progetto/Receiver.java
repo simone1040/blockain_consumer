@@ -4,12 +4,14 @@ import com.simone.progetto.syncro.SyncroCommunicator;
 import com.simone.progetto.syncro.SyncroMessage;
 import com.simone.progetto.utils.Configuration;
 import com.simone.progetto.utils.InsertChainSemaphore;
-import com.simone.progetto.utils.MyLogger;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Component;
 
-
+@Component
+@Slf4j
 public class Receiver {
 	@Autowired private Chain chain;
 	@Autowired private TransactionRules transactionRules;
@@ -20,31 +22,31 @@ public class Receiver {
 
 
 	public void tryToInsert(Block block){
-		if(chain.insertToChain(block)){
-			MyLogger.getInstance().info(Receiver.class.getName() + " - " + Configuration.UUID,"Blocco Inserito correttamente{Inserita da me}");
+		if(chain.insertToChain(block)) {
+			log.info("{"+Configuration.UUID + "} Block Successful inserted from this Receiver");
 			communicator.sendMessage(new SyncroMessage(block));
-			MyLogger.getInstance().info(Receiver.class.getName() + " - " + Configuration.UUID,"Messaggio di syncronizzazione inviato a tutti i consumers");
+			log.info("{"+Configuration.UUID + "} Syncro message send to other consumers");
 		}
 		else{
-			MyLogger.getInstance().info(Receiver.class.getName() + " - " + Configuration.UUID,"Transazione non inserita correttamente");
+			log.info("{"+Configuration.UUID + "} Transaction not inserted");
 		}
 	}
 
 	@RabbitListener(queues = "#{TransactionQueue.name}")
 	public void receive(Transaction transaction){
 		insertChainSemaphore.restartSemaphore();
-		MyLogger.getInstance().info(Receiver.class.getName() + " - " + Configuration.UUID,"Transazione arrivata --> " + transaction.getProduct().getName());
+		log.info("{"+Configuration.UUID + "} New transaction arrived --> " + transaction.getProduct().toString());
 		if(transactionRules.canInsert(transaction)){
 			Block b = chain.createBlock(transaction);
 			if(insertChainSemaphore.isToCompute()){
 				this.tryToInsert(b);
 			}
 			else{
-				MyLogger.getInstance().info(Receiver.class.getName() + " - " + Configuration.UUID,"Terminata la computazione perchè blocco già risolto da un altro consumer");
+				log.info("{"+Configuration.UUID + "} proof of work already computed. Check hash aborted");
 			}
 		}
 		else {
-			MyLogger.getInstance().info(Receiver.class.getName() + " - " + Configuration.UUID,"transaction non inserita, non ha superato i controlli");
+			log.info("{"+Configuration.UUID + "} Compared hash not egual, transaction rejected");
 		}
 		chain.printChain();
 	}

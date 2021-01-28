@@ -5,11 +5,13 @@ import com.simone.progetto.syncro.SyncroMessage;
 import com.simone.progetto.syncro.SyncronizationCodeResponseQueue;
 import com.simone.progetto.utils.Configuration;
 import com.simone.progetto.utils.InsertChainSemaphore;
-import com.simone.progetto.utils.MyLogger;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
-
+@Component
+@Slf4j
 public class SyncroQueue {
     @Autowired private Chain chain;
     @Autowired private InsertChainSemaphore insertChainSemaphore;
@@ -24,8 +26,7 @@ public class SyncroQueue {
     public void tryToInsertBlockFromOtherConsumer(Block block){
         if(chain.insertToChain(block)){
             insertChainSemaphore.blockComputation();
-            MyLogger.getInstance().info(Receiver.class.getName() + " - " + Configuration.UUID,
-                    "Blocco Inserito correttamente{Proveniente da altro consumer}");
+            log.info("{" + Configuration.UUID + "{ Block successful inserted ! {computed from another consumer}");
         }
         else{//Non Ho inserito correttamente, potrebbe mancarmi qualcosa
             this.requestPreviousBlock(block.getPreviousHash());
@@ -40,8 +41,7 @@ public class SyncroQueue {
                 this.tryToInsertBlockFromOtherConsumer(message.getBlock());
             }
             else{
-                MyLogger.getInstance().info(Receiver.class.getName() + " - " + Configuration.UUID,
-                        "Blocco con Hash scorretto, il blocco viene scartato");
+                log.info("{" + Configuration.UUID + "} Block hash corrupted !");
             }
         }
     }
