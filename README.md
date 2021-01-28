@@ -1,4 +1,4 @@
-#Receiver role of blockchain system - Spring boot + RabbitMQ + Docker 
+# Receiver role of blockchain system - Spring boot + RabbitMQ + Docker 
 
 Blochain simulation receiver 
 
