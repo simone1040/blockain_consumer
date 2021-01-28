@@ -1,6 +1,6 @@
 package com.simone.progetto;
 
-import com.simone.progetto.utils.Configuration;
+import com.simone.progetto.utils.ReceiverConfiguration;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -110,7 +110,7 @@ public class Chain {
     private void cleanForkChain(){
         int maxHeight = this.getMaxHeightChain();
         if(getTopList().removeIf(node -> deleteRule(node, maxHeight))){
-            log.info("{"+Configuration.UUID + "} Blockchain cleaned from fork !");
+            log.info("{"+ ReceiverConfiguration.UUID + "} Blockchain cleaned from fork !");
         }
     }
 
@@ -125,19 +125,19 @@ public class Chain {
     }
 
     public void printChain(){
-        log.info("{"+Configuration.UUID + "} ------------- CHAIN ----------------");
+        log.info("{"+ ReceiverConfiguration.UUID + "} ------------- CHAIN ----------------");
         for (Node r: getTopList()) {
-            log.info("{"+Configuration.UUID + "} ------------- RAMO CHAIN ----------------");
+            log.info("{"+ ReceiverConfiguration.UUID + "} ------------- RAMO CHAIN ----------------");
             printChainAncestor(r);
-            log.info("{"+Configuration.UUID + "} ----------------------------------");
+            log.info("{"+ ReceiverConfiguration.UUID + "} ----------------------------------");
         }
-        log.info("{"+Configuration.UUID + "} ----------------------------------");
+        log.info("{"+ ReceiverConfiguration.UUID + "} ----------------------------------");
     }
 
     private void printChainAncestor(Node r){
         Node tmp = r;
         while(tmp != null){
-            log.info("{"+Configuration.UUID + "} " + tmp.toString());
+            log.info("{"+ ReceiverConfiguration.UUID + "} " + tmp.toString());
             tmp = tmp.getParent();
         }
     }
@@ -152,7 +152,7 @@ public class Chain {
 
     public boolean checkHashBlock(Block currentBlock){
         if(!currentBlock.getHash().equals(currentBlock.computeHash(false))){
-            log.info("{"+Configuration.UUID + "} hashcode for this block is wrong");
+            log.info("{"+ ReceiverConfiguration.UUID + "} hashcode for this block is wrong");
             return false;
         }
         return true;

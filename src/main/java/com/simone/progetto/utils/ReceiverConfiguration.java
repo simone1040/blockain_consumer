@@ -8,7 +8,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 @Slf4j
-public class Configuration {
+public class ReceiverConfiguration {
     public static final String UUID = java.util.UUID.randomUUID().toString();
     public static final String CONFIGURATION_PATH = "receiver.conf";
     public static Integer MIN_NUMBER_OF_STEPS;
@@ -24,15 +24,15 @@ public class Configuration {
         try{
             InputStream file = new ClassPathResource(CONFIGURATION_PATH).getInputStream();
             configFile.load(file);
-            Configuration.MIN_NUMBER_OF_STEPS = Integer.parseInt(configFile.getProperty("MIN_NUMBER_OF_STEPS").trim());
-            Configuration.MAX_NUMBER_OF_STEPS = Integer.parseInt(configFile.getProperty("MAX_NUMBER_OF_STEPS").trim());
-            Configuration.MS_TIME_COMPUTE = Integer.parseInt(configFile.getProperty("MS_TIME_COMPUTE").trim());
-            Configuration.MIN_NONCE = Integer.parseInt(configFile.getProperty("MIN_NONCE").trim());
-            Configuration.MAX_NONCE = Integer.parseInt(configFile.getProperty("MAX_NONCE").trim());
-            Configuration.IP_ADDRESS_SERVER_RABBIT = configFile.getProperty("IP_ADDRESS").trim();
+            ReceiverConfiguration.MIN_NUMBER_OF_STEPS = Integer.parseInt(configFile.getProperty("MIN_NUMBER_OF_STEPS").trim());
+            ReceiverConfiguration.MAX_NUMBER_OF_STEPS = Integer.parseInt(configFile.getProperty("MAX_NUMBER_OF_STEPS").trim());
+            ReceiverConfiguration.MS_TIME_COMPUTE = Integer.parseInt(configFile.getProperty("MS_TIME_COMPUTE").trim());
+            ReceiverConfiguration.MIN_NONCE = Integer.parseInt(configFile.getProperty("MIN_NONCE").trim());
+            ReceiverConfiguration.MAX_NONCE = Integer.parseInt(configFile.getProperty("MAX_NONCE").trim());
+            ReceiverConfiguration.IP_ADDRESS_SERVER_RABBIT = configFile.getProperty("IP_ADDRESS").trim();
         }
         catch (Exception ex){
-            log.info("{" + Configuration.UUID + "} Exception in read configuration --> " + ex.toString());
+            log.info("{" + ReceiverConfiguration.UUID + "} Exception in read configuration --> " + ex.toString());
             System.exit(1);
         }
     }

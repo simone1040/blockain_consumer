@@ -1,5 +1,5 @@
 package com.simone.progetto.syncro;
-import com.simone.progetto.utils.Configuration;
+import com.simone.progetto.utils.ReceiverConfiguration;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.FanoutExchange;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -32,7 +32,7 @@ public class SyncronizationQueue implements SyncroCommunicator {
 
     @EventListener(ApplicationReadyEvent.class)
     public void SyncronizationStartup() {
-        log.info("{"+Configuration.UUID + "} Syncro request");
-        communicator.sendRequest(new SyncroCodeRequestMessage(Configuration.UUID,Configuration.GENESIS_HASH));
+        log.info("{"+ ReceiverConfiguration.UUID + "} Syncro request");
+        communicator.sendRequest(new SyncroCodeRequestMessage(ReceiverConfiguration.UUID, ReceiverConfiguration.GENESIS_HASH));
     }
 }

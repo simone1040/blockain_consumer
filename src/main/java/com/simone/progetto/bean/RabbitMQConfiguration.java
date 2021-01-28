@@ -1,4 +1,5 @@
 package com.simone.progetto.bean;
+import com.simone.progetto.utils.ReceiverConfiguration;
 import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
@@ -17,7 +18,7 @@ public class RabbitMQConfiguration {
 	@Bean
 	public ConnectionFactory connectionFactory() {
 		CachingConnectionFactory connectionFactory = new CachingConnectionFactory();
-		connectionFactory.setHost(com.simone.progetto.utils.Configuration.IP_ADDRESS_SERVER_RABBIT);
+		connectionFactory.setHost(ReceiverConfiguration.IP_ADDRESS_SERVER_RABBIT);
 		return connectionFactory;
 	}
 

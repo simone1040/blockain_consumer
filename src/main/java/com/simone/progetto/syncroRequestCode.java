@@ -3,7 +3,7 @@ package com.simone.progetto;
 import com.simone.progetto.syncro.SyncroCodeRequestMessage;
 import com.simone.progetto.syncro.SyncroCodeResponseMessage;
 import com.simone.progetto.syncro.SyncronizationCodeResponseQueue;
-import com.simone.progetto.utils.Configuration;
+import com.simone.progetto.utils.ReceiverConfiguration;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitHandler;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
@@ -47,30 +47,30 @@ public class syncroRequestCode {
             communicator.sendResponse(msg);
         }
         else{
-            log.info("{"+Configuration.UUID + "} Consumer already syncronized");
+            log.info("{"+ ReceiverConfiguration.UUID + "} Consumer already syncronized");
         }
     }
 
     @RabbitHandler
     public void receive(SyncroCodeRequestMessage syncroCodeRequestMessage){
         Stack<Node> toSend;
-        if(!syncroCodeRequestMessage.getId_applicant().equals(Configuration.UUID)){
-            SyncroCodeResponseMessage msg = new SyncroCodeResponseMessage(Configuration.UUID,
+        if(!syncroCodeRequestMessage.getId_applicant().equals(ReceiverConfiguration.UUID)){
+            SyncroCodeResponseMessage msg = new SyncroCodeResponseMessage(ReceiverConfiguration.UUID,
                     syncroCodeRequestMessage.getId_applicant());
             toSend = this.getBLockToReturn(syncroCodeRequestMessage.getRequest_block());
             if(toSend != null){
                 this.tryToSendSyncroMessage(msg,toSend);
             }
             else{
-                log.info("{"+Configuration.UUID + "} Block not found, i can't answer !");
+                log.info("{"+ ReceiverConfiguration.UUID + "} Block not found, i can't answer !");
             }
         }
     }
 
     public void trySendSynchronizeRequest(Node parent){
         if (parent != null) {
-            log.info("{"+Configuration.UUID + "} precedent block is missing, i can't syncronize queue!");
-            SyncroCodeRequestMessage msg = new SyncroCodeRequestMessage(Configuration.UUID,parent.getData().getHash());
+            log.info("{"+ ReceiverConfiguration.UUID + "} precedent block is missing, i can't syncronize queue!");
+            SyncroCodeRequestMessage msg = new SyncroCodeRequestMessage(ReceiverConfiguration.UUID,parent.getData().getHash());
             communicator.sendRequest(msg);
         }
     }
@@ -93,13 +93,13 @@ public class syncroRequestCode {
     @RabbitHandler
     public void receive(SyncroCodeResponseMessage syncroCodeResponseMessage){
         boolean syncro;
-        if(!syncroCodeResponseMessage.getId_publisher().equals(Configuration.UUID) &&
-        syncroCodeResponseMessage.getId_consumer().equals(Configuration.UUID)) {
+        if(!syncroCodeResponseMessage.getId_publisher().equals(ReceiverConfiguration.UUID) &&
+        syncroCodeResponseMessage.getId_consumer().equals(ReceiverConfiguration.UUID)) {
             //Controllo che già non sia stata effettuata la syncronizzazione
             if (chain.isToUpdate()){
                 syncro = this.synchronizeChain(syncroCodeResponseMessage.getRequest_node());
                 if (syncro) {
-                    log.info("{"+Configuration.UUID + "} syncronization queue correctly done !");
+                    log.info("{"+ ReceiverConfiguration.UUID + "} syncronization queue correctly done !");
                     chain.setToUpdate(false);
                     chain.printChain();
                 }

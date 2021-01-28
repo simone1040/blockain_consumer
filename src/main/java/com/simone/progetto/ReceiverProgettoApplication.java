@@ -1,5 +1,5 @@
 package com.simone.progetto;
-import com.simone.progetto.utils.Configuration;
+import com.simone.progetto.utils.ReceiverConfiguration;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
@@ -8,7 +8,7 @@ public class ReceiverProgettoApplication {
 
 
 	public static void main(String[] args) {
-		Configuration.Startup();
+		ReceiverConfiguration.Startup();
 		SpringApplication.run(ReceiverProgettoApplication.class, args);
 	}
 }

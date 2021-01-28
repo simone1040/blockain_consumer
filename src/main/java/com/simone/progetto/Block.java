@@ -1,7 +1,7 @@
 package com.simone.progetto;
 
 import com.simone.progetto.bean.BeanUtil;
-import com.simone.progetto.utils.Configuration;
+import com.simone.progetto.utils.ReceiverConfiguration;
 import com.simone.progetto.utils.InsertChainSemaphore;
 import com.simone.progetto.utils.Utils;
 import lombok.Getter;
@@ -27,9 +27,9 @@ public class Block implements Serializable {
 
     public Block(Transaction data, String previousHash) {
         this.data = data;
-        this.id_consumer =  Configuration.UUID;
+        this.id_consumer =  ReceiverConfiguration.UUID;
         this.previousHash = previousHash;
-        this.nonce = random.nextInt(Configuration.MAX_NONCE-Configuration.MIN_NONCE) + Configuration.MIN_NONCE;
+        this.nonce = random.nextInt(ReceiverConfiguration.MAX_NONCE- ReceiverConfiguration.MIN_NONCE) + ReceiverConfiguration.MIN_NONCE;
         insertChainSemaphore = BeanUtil.getBean(InsertChainSemaphore.class);
         this.hash = this.computeHash(true);
     }
@@ -37,7 +37,7 @@ public class Block implements Serializable {
     public Block(){
         this.id_consumer = "";
         this.data = new Transaction(0,new Product("GENESIS",0),0,0);
-        this.hash = Configuration.GENESIS_HASH;
+        this.hash = ReceiverConfiguration.GENESIS_HASH;
     }
 
     public String computeHash(boolean compute_proof){
@@ -53,24 +53,24 @@ public class Block implements Serializable {
     
     private void computeProofOfWoork(){
         int count_num_steps;
-        int number_of_step = (random.nextInt(Configuration.MAX_NUMBER_OF_STEPS-Configuration.MIN_NUMBER_OF_STEPS) + Configuration.MIN_NUMBER_OF_STEPS);
+        int number_of_step = (random.nextInt(ReceiverConfiguration.MAX_NUMBER_OF_STEPS- ReceiverConfiguration.MIN_NUMBER_OF_STEPS) + ReceiverConfiguration.MIN_NUMBER_OF_STEPS);
         for(count_num_steps = 0; count_num_steps < number_of_step; count_num_steps++){
             if(insertChainSemaphore.isToCompute()){
                 compute();
             }
         }
         if(insertChainSemaphore.isToCompute()){
-            log.info("{"+Configuration.UUID + "} proof of work time computation --> " + Configuration.MS_TIME_COMPUTE * count_num_steps);
+            log.info("{"+ ReceiverConfiguration.UUID + "} proof of work time computation --> " + ReceiverConfiguration.MS_TIME_COMPUTE * count_num_steps);
         }
         this.timestamp = new Date().getTime();
     }
 
     private void compute(){
         try{
-            Thread.sleep(Configuration.MS_TIME_COMPUTE);
+            Thread.sleep(ReceiverConfiguration.MS_TIME_COMPUTE);
         }
         catch (InterruptedException ex){
-            log.info("{"+Configuration.UUID + "} sleep Exception --> " + ex.getMessage() );
+            log.info("{"+ ReceiverConfiguration.UUID + "} sleep Exception --> " + ex.getMessage() );
         }
     }
 
