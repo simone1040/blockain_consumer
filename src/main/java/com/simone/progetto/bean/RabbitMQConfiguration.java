@@ -1,5 +1,8 @@
 package com.simone.progetto.bean;
+import com.simone.progetto.utils.ReceiverConfiguration;
 import org.springframework.amqp.core.*;
+import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
+import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -11,6 +14,14 @@ public class RabbitMQConfiguration {
 	Coda che permette la sincronizzazione delle code con i nuovi consumers
 	 */
 	public static final String FANOUT_EXCHANGE_SYNCRO_REQUEST_CODE = "FanoutExchangeSyncroRequestCode";
+
+	@Bean
+	public ConnectionFactory connectionFactory() {
+		CachingConnectionFactory connectionFactory = new CachingConnectionFactory();
+		connectionFactory.setHost(ReceiverConfiguration.IP_ADDRESS_SERVER_RABBIT);
+		return connectionFactory;
+	}
+
 
 	@Bean(name = "fanout_transaction")
 	public FanoutExchange fanout_transaction() {

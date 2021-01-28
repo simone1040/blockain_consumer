@@ -1,49 +1,49 @@
 package com.simone.progetto;
 
+import com.simone.progetto.syncro.SyncroCodeRequestMessage;
 import com.simone.progetto.syncro.SyncroMessage;
-import com.simone.progetto.utils.MyLogger;
+import com.simone.progetto.syncro.SyncronizationCodeResponseQueue;
+import com.simone.progetto.utils.ReceiverConfiguration;
+import com.simone.progetto.utils.InsertChainSemaphore;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
-import java.util.concurrent.Semaphore;
-
+@Component
+@Slf4j
 public class SyncroQueue {
     @Autowired private Chain chain;
-    @Autowired private Semaphore lock_chain;
+    @Autowired private InsertChainSemaphore insertChainSemaphore;
+    @Autowired private SyncronizationCodeResponseQueue communicator;
 
+    public void requestPreviousBlock(String previousHash){
+        SyncroCodeRequestMessage msg = new SyncroCodeRequestMessage(ReceiverConfiguration.UUID,previousHash);
+        //Richiedo dal blocco precedente e mi faccio mandare l'intera catena a partire da esso
+        communicator.sendRequest(msg);
+    }
+
+    public void tryToInsertBlockFromOtherConsumer(Block block){
+        if(chain.insertToChain(block)){
+            insertChainSemaphore.blockComputation();
+            log.info("{" + ReceiverConfiguration.UUID + "{ Block successful inserted ! {computed from another consumer}");
+        }
+        else{//Non Ho inserito correttamente, potrebbe mancarmi qualcosa
+            this.requestPreviousBlock(block.getPreviousHash());
+        }
+    }
 
     @RabbitListener(queues = "#{SyncroQueue.name}")
     public void receive_syncro(SyncroMessage message){
-        if(!message.getId_consumer().equals(Constants.UUID)){//Messaggio che non arriva da me stesso
+        if(!message.getId_consumer().equals(ReceiverConfiguration.UUID)){//Messaggio che non arriva da me stesso
             //Controlliamo che il blocco abbia l'hash giusto.
-            if(message.getBlock().computeHash(false).equals(message.getBlock().getHash())){//Hash corretto
-                try {
-                    lock_chain.acquire();
-                    if(chain.getIdLastBlock() < message.getBlock().getId_block()){ // Controllo che non ci sia un blocco uguale
-                        chain.insertBlock(message.getBlock());
-                        MyLogger.getInstance().info(Receiver.class.getName() + " - " + Constants.UUID,"Blocco già risolto da un altro consumers, aggiungo il suo");
-                    }
-                    else{
-                        MyLogger.getInstance().info(Receiver.class.getName() + " - " + Constants.UUID,"Blocco già da me inserito");
-                        for(int i = chain.getChain().size() - 1 ; i >= 0 ;i--){
-                            Block block = chain.getChain().get(i);
-                            if(block.getId_block().equals(message.getBlock().getId_block())){
-                                if(block.getTimestamp() > message.getBlock().getTimestamp()){
-                                    MyLogger.getInstance().info(Receiver.class.getName() + " - " + Constants.UUID,"Sostituisco perchè il blocco da me calcolato ha timestamp minore");
-                                    chain.getChain().set(i,message.getBlock());
-                                }
-                            }
-                            else if(block.getId_block() < message.getBlock().getId_block()){
-                                break;
-                            }
-                        }
-                    }
-                    lock_chain.release();
-                }
-                catch (Exception ex){
-                    MyLogger.getInstance().error(Receiver.class.getName(),"Eccezione nell'acquire --> "+ex.toString(),ex);
-                }
+            if(chain.checkHashBlock(message.getBlock())){//Hash corretto
+                this.tryToInsertBlockFromOtherConsumer(message.getBlock());
+            }
+            else{
+                log.info("{" + ReceiverConfiguration.UUID + "} Block hash corrupted !");
             }
         }
     }
+
 }

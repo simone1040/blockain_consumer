@@ -9,9 +9,6 @@ public class TransactionRules {
         if(transaction.getId_client() == 0 || transaction.getId_client() == null){
             return false;
         }
-        if(transaction.getQuantity() == 0 || transaction.getId_client() == null){
-            return false;
-        }
         if(transaction.getProduct().getName().isEmpty() || transaction.getProduct().getName() == null){
             return false;
         }

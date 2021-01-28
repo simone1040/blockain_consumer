@@ -3,69 +3,109 @@ package com.simone.progetto;
 import com.simone.progetto.syncro.SyncroCodeRequestMessage;
 import com.simone.progetto.syncro.SyncroCodeResponseMessage;
 import com.simone.progetto.syncro.SyncronizationCodeResponseQueue;
-import com.simone.progetto.utils.MyLogger;
+import com.simone.progetto.utils.ReceiverConfiguration;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitHandler;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
+import java.util.Stack;
 
 @RabbitListener(id="multi",queues = "#{SyncroRequestCode.name}")
+@Component
+@Slf4j
 public class syncroRequestCode {
-    @Autowired
-    private Chain chain;
+    @Autowired private Chain chain;
     @Autowired private SyncronizationCodeResponseQueue communicator;
 
-    @RabbitHandler
-    public void receive(SyncroCodeRequestMessage syncroCodeRequestMessage){
-        if(!syncroCodeRequestMessage.getId_applicant().equals(Constants.UUID)){
-            SyncroCodeResponseMessage msg = new SyncroCodeResponseMessage(Constants.UUID,
-                    syncroCodeRequestMessage.getId_applicant(),syncroCodeRequestMessage.getRequest());
-            switch (syncroCodeRequestMessage.getRequest()){
-                case ALL:
-                    msg.setBlock_of_transaction(chain.getChain());
-                    break;
-                case ANY:
-                    ArrayList<Block> blocks = new ArrayList<Block>();
-                    for (Integer i: syncroCodeRequestMessage.getRequest_block()) {
-                        if(i < chain.getIdLastBlock()){
-                            blocks.add(chain.getChain().get(i));
-                        }
-                    }
-                    msg.setBlock_of_transaction(blocks);
-                    break;
+    public Stack<Node> insertElementToStack(Stack<Node> stack,Stack<Node> toInsert){
+        if(stack == null){
+            stack = new Stack<>();
+        }
+        toInsert.addAll(stack);
+        return toInsert;
+    }
+
+    public Stack<Node> getBLockToReturn(String researchHash){
+        Stack<Node> toSend = null;
+        Stack<Node> temp;
+        for (Node node: chain.getTopList()) {
+            //CERCO IL BLOCCO IN OGNI CATENA E RITORNO TUTTI QUELLI CHE LO SUCCEDONO
+            temp = chain.searchListOfBlock(node,researchHash);
+            if(temp != null){
+                toSend = this.insertElementToStack(toSend,temp);
             }
+        }
+        return  toSend;
+    }
+
+    public void tryToSendSyncroMessage(SyncroCodeResponseMessage msg,Stack<Node> toSend){
+        if(toSend.size() > 0){
+            msg.setRequest_node(toSend);
             //DEVO INVIARLO NELLA CODA
             communicator.sendResponse(msg);
         }
+        else{
+            log.info("{"+ ReceiverConfiguration.UUID + "} Consumer already syncronized");
+        }
+    }
+
+    @RabbitHandler
+    public void receive(SyncroCodeRequestMessage syncroCodeRequestMessage){
+        Stack<Node> toSend;
+        if(!syncroCodeRequestMessage.getId_applicant().equals(ReceiverConfiguration.UUID)){
+            SyncroCodeResponseMessage msg = new SyncroCodeResponseMessage(ReceiverConfiguration.UUID,
+                    syncroCodeRequestMessage.getId_applicant());
+            toSend = this.getBLockToReturn(syncroCodeRequestMessage.getRequest_block());
+            if(toSend != null){
+                this.tryToSendSyncroMessage(msg,toSend);
+            }
+            else{
+                log.info("{"+ ReceiverConfiguration.UUID + "} Block not found, i can't answer !");
+            }
+        }
+    }
+
+    public void trySendSynchronizeRequest(Node parent){
+        if (parent != null) {
+            log.info("{"+ ReceiverConfiguration.UUID + "} precedent block is missing, i can't syncronize queue!");
+            SyncroCodeRequestMessage msg = new SyncroCodeRequestMessage(ReceiverConfiguration.UUID,parent.getData().getHash());
+            communicator.sendRequest(msg);
+        }
+    }
+
+    public boolean synchronizeChain(Stack<Node> syncStack){
+        boolean syncro = true;
+        Node toInsert;
+        while (syncStack.size() > 0 && syncro) { //INserisco finchè lo stack è pieno
+            toInsert = syncStack.pop();
+            if(chain.checkHashBlock(toInsert.getData())){
+                if (!chain.insertToChain(toInsert)) {
+                    syncro = false;
+                    this.trySendSynchronizeRequest(toInsert.getParent());
+                }
+            }
+        }
+        return syncro;
     }
 
     @RabbitHandler
     public void receive(SyncroCodeResponseMessage syncroCodeResponseMessage){
-        if(!syncroCodeResponseMessage.getId_publisher().equals(Constants.UUID) &&
-        syncroCodeResponseMessage.getId_consumer().equals(Constants.UUID)){
-            if(chain.isToUpdate()){//Controllo che già non sia stata effettuata la syncronizzazione
-                switch (syncroCodeResponseMessage.getType_request()){
-                    case ALL:
-                        //Controllo che la chain sia valida
-                        if(chain.setChain(syncroCodeResponseMessage.getBlock_of_transaction())){
-                            MyLogger.getInstance().info(syncroRequestCode.class.getName(),
-                                    "Syncronizzazione del consumers con la blockchain effettuata correttamente");
-                        }
-                        else{
-                            MyLogger.getInstance().info(syncroRequestCode.class.getName(),
-                                    "Syncronizzazione del consumers con la blockchain non effettuata correttamente,uscita");
-                            System.exit(1);
-                        }
-                        break;
-                    case ANY:
-                        for (Block b: syncroCodeResponseMessage.getBlock_of_transaction()) {
-                            chain.setBlockFromOtherConsumer(b);
-                        }
-                        break;
+        boolean syncro;
+        if(!syncroCodeResponseMessage.getId_publisher().equals(ReceiverConfiguration.UUID) &&
+        syncroCodeResponseMessage.getId_consumer().equals(ReceiverConfiguration.UUID)) {
+            //Controllo che già non sia stata effettuata la syncronizzazione
+            if (chain.isToUpdate()){
+                syncro = this.synchronizeChain(syncroCodeResponseMessage.getRequest_node());
+                if (syncro) {
+                    log.info("{"+ ReceiverConfiguration.UUID + "} syncronization queue correctly done !");
+                    chain.setToUpdate(false);
+                    chain.printChain();
                 }
             }
         }
     }
+
 }
 

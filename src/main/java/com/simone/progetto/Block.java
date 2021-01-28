@@ -1,80 +1,90 @@
 package com.simone.progetto;
 
-import com.simone.progetto.utils.MyLogger;
+import com.simone.progetto.bean.BeanUtil;
+import com.simone.progetto.utils.ReceiverConfiguration;
+import com.simone.progetto.utils.InsertChainSemaphore;
 import com.simone.progetto.utils.Utils;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
+
 import java.io.Serializable;
 import java.util.Date;
 import java.util.Random;
 
+@Getter
+@Setter
+@Slf4j
 public class Block implements Serializable {
-    private Integer id_block; //Contatore che tiene traccia di quanti blocchi tiene la blockchain
+    private transient InsertChainSemaphore insertChainSemaphore;
+    private String  id_consumer;//Id del miner che ha creato questo blocco
     private Transaction data;
-    private String hash;
+    private String hash = "";
+    private Integer nonce;
     private Random random = new Random();
-    private String previousHash;
-    private long timestamp;
-    private static final Integer LOW_SECOND = 1000;
-    private static final Integer HIGH_SECOND = 8500;
+    private String previousHash = null;
+    private long timestamp = 0;
 
-    public Block(Transaction data, String previousHash,Integer id_block) {
-        this.id_block = id_block;
+    public Block(Transaction data, String previousHash) {
         this.data = data;
+        this.id_consumer =  ReceiverConfiguration.UUID;
         this.previousHash = previousHash;
+        this.nonce = random.nextInt(ReceiverConfiguration.MAX_NONCE- ReceiverConfiguration.MIN_NONCE) + ReceiverConfiguration.MIN_NONCE;
+        insertChainSemaphore = BeanUtil.getBean(InsertChainSemaphore.class);
         this.hash = this.computeHash(true);
     }
 
+    public Block(){
+        this.id_consumer = "";
+        this.data = new Transaction(0,new Product("GENESIS",0),0,0);
+        this.hash = ReceiverConfiguration.GENESIS_HASH;
+    }
+
     public String computeHash(boolean compute_proof){
-        String stringToHash = data.getStringToHash();
         if(compute_proof){
             this.computeProofOfWoork();
         }
+        String stringToHash = nonce + timestamp + data.getStringToHash();
         if(this.previousHash != null){
-            stringToHash = this.previousHash + timestamp + data.getStringToHash();
+            stringToHash = this.previousHash  + nonce + timestamp + data.getStringToHash();
         }
         return Utils.applySha256(stringToHash);
     }
-
+    
     private void computeProofOfWoork(){
-        int mseconds = (random.nextInt(HIGH_SECOND-LOW_SECOND) + LOW_SECOND);
+        int count_num_steps;
+        int number_of_step = (random.nextInt(ReceiverConfiguration.MAX_NUMBER_OF_STEPS- ReceiverConfiguration.MIN_NUMBER_OF_STEPS) + ReceiverConfiguration.MIN_NUMBER_OF_STEPS);
+        for(count_num_steps = 0; count_num_steps < number_of_step; count_num_steps++){
+            if(insertChainSemaphore.isToCompute()){
+                compute();
+            }
+        }
+        if(insertChainSemaphore.isToCompute()){
+            log.info("{"+ ReceiverConfiguration.UUID + "} proof of work time computation --> " + ReceiverConfiguration.MS_TIME_COMPUTE * count_num_steps);
+        }
+        this.timestamp = new Date().getTime();
+    }
+
+    private void compute(){
         try{
-            Thread.sleep(mseconds);
-            this.timestamp = new Date().getTime();
-            MyLogger.getInstance().info(Block.class.getName() + " - " + Constants.UUID,"Tempo usato calcolare il proof of work in ms --> " + mseconds);
+            Thread.sleep(ReceiverConfiguration.MS_TIME_COMPUTE);
         }
         catch (InterruptedException ex){
-            MyLogger.getInstance().info(Block.class.getName(),"Eccezione nello sleep --> " + ex);
+            log.info("{"+ ReceiverConfiguration.UUID + "} sleep Exception --> " + ex.getMessage() );
         }
-    }
-
-    public Transaction getData() {
-        return data;
-    }
-
-    public String getHash() {
-        return hash;
-    }
-    
-    public String getPreviousHash() {
-        return previousHash;
-    }
-
-    public long getTimestamp() {
-        return timestamp;
-    }
-
-    public Integer getId_block() {
-        return id_block;
     }
 
     @Override
     public String toString() {
         return "Block{" +
-                "id_block=" + id_block +
-                ", data=" + data +
-                ", hash='" + hash + '\'' +
-                ", random=" + random +
-                ", previousHash='" + previousHash + '\'' +
+                "id_consumer=" + id_consumer +
+                ", Client Product=" + data.getId_client() +
+                ", Product name=" + data.getProduct().getName() +
+                ", Product price=" + data.getProduct().getPrice() +
+                ", Product quantity=" + data.getQuantity() +
                 ", timestamp=" + timestamp +
+                ", Hash=" + hash +
+                ", PreviousHash=" + previousHash +
                 '}';
     }
 }
