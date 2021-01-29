@@ -16,7 +16,7 @@ In order to run this project you'll need:
 
 **JAVA**
 
-*[JAVA](https://www.java.com/it/download/)
+* [JAVA](https://www.java.com/it/download/)
 
 ### Usage
 
